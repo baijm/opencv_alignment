@@ -108,6 +108,51 @@ void save_brisk(string img_dir, string img_name, string save_dir)
 	save_des_txt(desname, des);
 }
 
+// RANSAC相关
+// 随机从[min_idx, max_idx]的下标中选n个不重复的加入到idx
+void get_n_idx(int n, int min_idx, int max_idx, vector<int>& res)
+{
+	res.clear();
+
+	while (res.size() != n)
+	{
+		srand((int)time(NULL));
+		int idx = rand()%(max_idx-min_idx+1)+min_idx;
+		if (find(res.begin(), res.end(), idx) != res.end())
+		{
+			continue;
+		}
+		else
+		{
+			res.push_back(idx);
+		}
+	}
+}
+
+// 检查3对点是否共线
+bool is_colinear_3(vector<Point2f>& p, vector<Point2f>& q)
+{
+	// 如果不是3对点, 返回true
+	if (p.size() != 3 || q.size() != 3)
+	{
+		return true;
+	}
+
+	// 如果有重复点, 返回true
+	if (p[0] == p[1] || p[0] == p[2] || p[1] == p[2] || q[0] == q[1] || q[0] == q[2] || q[1] == q[2])
+	{
+		return true;
+	}
+
+	Point2f p01(p[1].x - p[0].x, p[1].y - p[0].y);
+	Point2f p02(p[2].x - p[0].x, p[2].y - p[0].y);
+	Point2f q01(q[1].x - q[0].x, q[1].y - q[0].y);
+	Point2f q02(q[2].x - q[0].x, q[2].y - q[0].y);
+
+	return p01.cross(p02) == 0 || q01.cross(q02) == 0;
+}
+
+
 /*
 int main()
 {

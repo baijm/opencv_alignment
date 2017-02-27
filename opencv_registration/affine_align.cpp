@@ -259,70 +259,147 @@ int main()
 				ite->y -= ref_center.y;
 			}
 
-			// 求仿射矩阵初始值, 用相似度最高的3个匹配
-			vector<Point2f> test_top3;
-			vector<Point2f> ref_top3;
-			for (int i = 0; i < 3; i++)
+			/************************************************************************/
+			/* RANSAC求仿射矩阵                                                                     */
+			/************************************************************************/
+			const int AFFINE_MIN_MATCHES = 3;
+			const int RANSAC_MAX_ITERS = 1000;
+			const double AFFINE_REPROJ_THRESH = 3;
+			const int RANSAC_MIN_INLIERS = 1;
+
+			Mat A_mat_best(2, 3, CV_64F);
+			double best_err = numeric_limits<double>::max();
+
+			for (int ite = 0; ite < RANSAC_MAX_ITERS; ite++)
 			{
-				test_top3.push_back(test_kps[matches[i].test_pid]);
-				ref_top3.push_back(ref_kps[matches[i].tmpl_pid]);
+				cout << "\t\tRANSAC iter = " << ite << endl;
+				// 随机选3对点
+				vector<int> maybe_inliers;
+				get_n_idx(AFFINE_MIN_MATCHES, 0, matches.size() - 1, maybe_inliers);
+				
+				vector<Point2f> test_sample, ref_sample;
+				for (int i = 0; i < AFFINE_MIN_MATCHES; i++)
+				{
+					test_sample.push_back(test_kps[matches[maybe_inliers[i]].test_pid]);
+					ref_sample.push_back(ref_kps[matches[maybe_inliers[i]].tmpl_pid]);
+				}
+
+				// 测试是否共线
+				if (is_colinear_3(test_sample, ref_sample))
+				{
+					continue;
+				}
+
+				// 求仿射矩阵
+				Mat A_mat = getAffineTransform(test_sample, ref_sample);
+
+				// 求没用来求仿射矩阵的匹配中的inliers
+				vector<int> also_inliers;
+				for (int mi = 0; mi < matches.size(); mi++)
+				{
+					// 如果没用来求仿射矩阵
+					if (find(maybe_inliers.begin(), maybe_inliers.end(), mi) == maybe_inliers.end())
+					{
+						// 测试图像中特征点坐标
+						Point2f p_test = test_kps[matches[mi].test_pid];
+
+						// 模板图像中特征点坐标
+						Point2f p_ref = ref_kps[matches[mi].tmpl_pid];
+
+						// 计算测试图像中特征点投影后的坐标
+						Point2f p_test_proj(
+							A_mat.at<double>(0, 0) * p_test.x + A_mat.at<double>(0, 1) * p_test.y + A_mat.at<double>(0, 2),
+							A_mat.at<double>(1, 0) * p_test.x + A_mat.at<double>(1, 1) * p_test.y + A_mat.at<double>(1, 2)
+							);
+
+						// 计算投影误差
+						double proj_err = sqrt(pow(p_test_proj.x - p_ref.x, 2) + pow(p_test_proj.y - p_ref.y, 2));
+
+						// 如果误差小于阈值, 加入inliers
+						if (proj_err <= AFFINE_REPROJ_THRESH)
+						{
+							also_inliers.push_back(mi);
+						}
+					}
+				}
+
+				// 如果没用来求仿射矩阵的匹配中inliers数量超过阈值, 则用全部inliers求参数
+				if (also_inliers.size() >= RANSAC_MIN_INLIERS)
+				{
+					// 用全部inliers求参数
+					vector<MatchKpsSim> all_inliers;
+					for (int i = 0; i < maybe_inliers.size(); i++)
+					{
+						all_inliers.push_back(matches[maybe_inliers[i]]);
+					}
+					for (int i = 0; i < also_inliers.size(); i++)
+					{
+						all_inliers.push_back(matches[also_inliers[i]]);
+					}
+
+					vector<double> a(6);
+					a[0] = A_mat.at<double>(0, 0);
+					a[1] = A_mat.at<double>(0, 1);
+					a[2] = A_mat.at<double>(0, 2);
+					a[3] = A_mat.at<double>(1, 0);
+					a[4] = A_mat.at<double>(1, 1);
+					a[5] = A_mat.at<double>(1, 2);
+
+					ObjectiveFunctionData* obj_func_data = 
+						new ObjectiveFunctionData(all_inliers, test_kps, ref_kps);
+					nlopt::opt opt(nlopt::LD_MMA, 6);
+					opt.set_min_objective(obj_func, obj_func_data);
+					opt.set_ftol_abs(0.5);
+					opt.set_stopval(3.0 * matches.size());
+
+					double min_f;
+					opt_iters = 0;
+					nlopt::result result = opt.optimize(a, min_f);
+
+					if (result > 0)
+					{
+						// 优化成功
+						// 如果误差比当前最好的小, 则更新A_mat_best和best_err
+						if (min_f < best_err)
+						{
+							best_err = min_f;
+							A_mat_best.at<double>(0, 0) = a[0];
+							A_mat_best.at<double>(0, 1) = a[1];
+							A_mat_best.at<double>(0, 2) = a[2];
+							A_mat_best.at<double>(1, 0) = a[3];
+							A_mat_best.at<double>(1, 1) = a[4];
+							A_mat_best.at<double>(1, 2) = a[5];
+						}
+					}
+					else
+					{
+						// 优化失败
+						continue;
+					}
+				}
 			}
-			Mat affine_mat = getAffineTransform(test_top3, ref_top3);
 
-			// 优化
-			vector<double> a(6);
-			a[0] = affine_mat.at<double>(0, 0);
-			a[1] = affine_mat.at<double>(0, 1);
-			a[2] = affine_mat.at<double>(0, 2);
-			a[3] = affine_mat.at<double>(1, 0);
-			a[4] = affine_mat.at<double>(1, 1);
-			a[5] = affine_mat.at<double>(1, 2);
-			ObjectiveFunctionData* obj_func_data = new ObjectiveFunctionData(matches, test_kps, ref_kps);
-			nlopt::opt opt(nlopt::LD_MMA, 6);
-			opt.set_min_objective(obj_func, obj_func_data);
-			opt.set_ftol_abs(0.5);
-			opt.set_stopval(3.0 * matches.size());
-			double min_f;
-			opt_iters = 0;
-			nlopt::result result = opt.optimize(a, min_f);
-			if (result > 0)
-			{
-				cout << "optimization succeeded, return code = " << result 
-					<< ", objective function value = " << min_f
-					<< ", iters = " << opt_iters << endl;
+			/************************************************************************/
+			/* 变换测试图像                                                                     */
+			/************************************************************************/
+			// 把测试图像中心与模板图像中心对齐
+			Mat T(2, 3, A_mat_best.type());
+			T.at<double>(0, 0) = T.at<double>(1, 1) = 1;
+			T.at<double>(0, 1) = T.at<double>(1, 0) = 0;
+			T.at<double>(0, 2) = -test_center.x + ref_center.x;
+			T.at<double>(1, 2) = -test_center.y + ref_center.y;
+			Mat T_im;
+			warpAffine(test_im, T_im, T, ref_im.size());
+			namedWindow("after aligning centers");
+			imshow("after aligning centers", T_im);
 
-				// 把测试图像中心与模板图像中心对齐, 变换到模板图像
-				Mat T(2, 3, affine_mat.type());
-				T.at<double>(0, 0) = T.at<double>(1, 1) = 1;
-				T.at<double>(0, 1) = T.at<double>(1, 0) = 0;
-				T.at<double>(0, 2) = -test_center.x + ref_center.x;
-				T.at<double>(1, 2) = -test_center.y + ref_center.y;
-				Mat T_im;
-				warpAffine(test_im, T_im, T, ref_im.size());
-				namedWindow("after aligning centers");
-				imshow("after aligning centers", T_im);
-
-				// 仿射变换
-				affine_mat.at<double>(0, 0) = a[0];
-				affine_mat.at<double>(0, 1) = a[1];
-				affine_mat.at<double>(0, 2) = a[2];
-				affine_mat.at<double>(1, 0) = a[3];
-				affine_mat.at<double>(1, 1) = a[4];
-				affine_mat.at<double>(1, 2) = a[5];
-
-				Mat A_im;
-				warpAffine(T_im, A_im, affine_mat, ref_im.size());
-				namedWindow("after affine");
-				imshow("after affine", A_im);
-				fs::path align_im_file = res_align_path / (*test_iter + "_" + *ref_iter + ".jpg");
-				imwrite(align_im_file.string(), A_im);
-			}
-			else
-			{
-				cout << "optimization failed, return code = " << result << endl;
-			}
-
-			// 用优化结果对测试图像每个像素位置进行变换
+			// 仿射变换
+			Mat A_im;
+			warpAffine(T_im, A_im, A_mat_best, ref_im.size());
+			namedWindow("after affine");
+			imshow("after affine", A_im);
+			//fs::path align_im_file = res_align_path / (*test_iter + "_" + *ref_iter + ".jpg");
+			//imwrite(align_im_file.string(), A_im);
 
 
 			waitKey();

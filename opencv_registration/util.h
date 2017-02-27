@@ -10,6 +10,8 @@
 #include <iostream>
 #include <fstream> 
 #include <string>
+#include <limits>
+#include <time.h>
 
 using namespace cv;
 using namespace std;
@@ -58,3 +60,13 @@ void load_match_txt(string txt_path, vector<MatchKpsSim>& matches);
 void load_des_txt(string des_path, Mat& des);
 
 void save_brisk(string img_dir, string img_name, string save_dir);
+
+// RANSAC相关
+// 随机从[min_idx, max_idx]的下标中选n个不重复的加入到idx
+void get_n_idx(int n, int min_idx, int max_idx, vector<int>& res);
+
+// 检查3对点是否共线
+// [现在是检查p中3点是否共线, q中3点是否共线]
+// TODO : 是这样检查吗?
+bool is_colinear_3(vector<Point2f>& p, vector<Point2f>& q);
+
