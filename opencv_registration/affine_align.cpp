@@ -2,11 +2,11 @@
 #include <opencv2/calib3d/calib3d.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
 #include <opencv2/features2d/features2d.hpp>
-#include <opencv2/nonfree/nonfree.hpp>
+#include <opencv2/opencv.hpp>
 
 #include <boost/filesystem.hpp>
 
-#include <nlopt.hpp>
+//#include <nlopt.hpp>
 
 #include <iostream>
 #include <fstream>
@@ -22,62 +22,82 @@ using namespace cv;
 最小化目标函数 \sum_{i=1}^N ||Mp_{i} - p_{i'}||_2
 其中N为匹配数, p_{i}为测试图像中特征点坐标, p_{i'}为模板图像中特征点坐标
 */
-
+/*
 int opt_iters = 0;
 
 // 目标函数
 // a = {a11, a12, a13, a21, a22, a23}
 double obj_func(const vector<double> &a, vector<double> &grad, void *func_data)
 {
-	opt_iters++;
+opt_iters++;
 
-	ObjectiveFunctionData *data = reinterpret_cast<ObjectiveFunctionData*>(func_data);
-	// TODO : 用引用给引用赋值会怎么样??
-	vector<MatchKpsSim> *matches = data->matches; 
-	vector<Point2f> *test_pts = data->test_pts;
-	vector<Point2f> *ref_pts = data->tmpl_pts;
+ObjectiveFunctionData *data = reinterpret_cast<ObjectiveFunctionData*>(func_data);
+// TODO : 用引用给引用赋值会怎么样??
+vector<MatchKpsSim> *matches = data->matches;
+vector<Point2f> *test_pts = data->test_pts;
+vector<Point2f> *ref_pts = data->tmpl_pts;
 
-	if (!grad.empty())
-	{
-		for (int gi = 0; gi < grad.size(); gi++)
-		{
-			grad[gi] = 0;
-		}
-	}
-
-	// 求目标函数的值
-	double val = 0;
-	for (int i = 0; i < matches->size(); i++)
-	{
-		Point2f p_test = (*test_pts)[(*matches)[i].test_pid];
-		Point2f p_ref = (*ref_pts)[(*matches)[i].tmpl_pid];
-
-		Point2f p_test_new(
-			a[0] * p_test.x + a[1] * p_test.y + a[2],
-			a[3] * p_test.x + a[4] * p_test.y + a[5]
-			);
-
-		double diff_x_i = p_test_new.x - p_ref.x;
-		double diff_y_i = p_test_new.y - p_ref.y;
-		double dist_i = sqrt(pow(diff_x_i, 2) + pow(diff_y_i, 2));
-
-		val += dist_i;
-
-		if (!grad.empty() && dist_i > 0)
-		{
-			grad[0] += (diff_x_i / dist_i)*p_test.x;
-			grad[1] += (diff_x_i / dist_i)*p_test.y;
-			grad[2] += (diff_x_i / dist_i);
-			grad[3] += (diff_y_i / dist_i)*p_test.x;
-			grad[4] += (diff_y_i / dist_i)*p_test.y;
-			grad[5] += (diff_y_i / dist_i);
-		}
-	}
-
-	return val;
+if (!grad.empty())
+{
+for (int gi = 0; gi < grad.size(); gi++)
+{
+grad[gi] = 0;
+}
 }
 
-// TODO : 约束
+// 求目标函数的值
+double val = 0;
+for (int i = 0; i < matches->size(); i++)
+{
+Point2f p_test = (*test_pts)[(*matches)[i].test_pid];
+Point2f p_ref = (*ref_pts)[(*matches)[i].tmpl_pid];
+
+Point2f p_test_new(
+a[0] * p_test.x + a[1] * p_test.y + a[2],
+a[3] * p_test.x + a[4] * p_test.y + a[5]
+);
+
+double diff_x_i = p_test_new.x - p_ref.x;
+double diff_y_i = p_test_new.y - p_ref.y;
+double dist_i = sqrt(pow(diff_x_i, 2) + pow(diff_y_i, 2));
+
+val += dist_i;
+
+if (!grad.empty() && dist_i > 0)
+{
+grad[0] += (diff_x_i / dist_i)*p_test.x;
+grad[1] += (diff_x_i / dist_i)*p_test.y;
+grad[2] += (diff_x_i / dist_i);
+grad[3] += (diff_y_i / dist_i)*p_test.x;
+grad[4] += (diff_y_i / dist_i)*p_test.y;
+grad[5] += (diff_y_i / dist_i);
+}
+}
+
+return val;
+}
+
+// main中代码片段
+vector<double> a(6);
+a[0] = A_mat.at<double>(0, 0);
+a[1] = A_mat.at<double>(0, 1);
+a[2] = A_mat.at<double>(0, 2);
+a[3] = A_mat.at<double>(1, 0);
+a[4] = A_mat.at<double>(1, 1);
+a[5] = A_mat.at<double>(1, 2);
+
+ObjectiveFunctionData* obj_func_data =
+new ObjectiveFunctionData(all_inliers, test_kps, ref_kps);
+nlopt::opt opt(nlopt::LD_MMA, 6);
+opt.set_min_objective(obj_func, obj_func_data);
+opt.set_ftol_abs(0.5);
+opt.set_stopval(3.0 * matches.size());
+
+double min_f;
+opt_iters = 0;
+nlopt::result result = opt.optimize(a, min_f);
+*/
+
 
 int main()
 {
@@ -97,7 +117,7 @@ int main()
 	string ref_name_file = "D:/datasets/shelf/patch/ref/all/img_list_3_per_class.txt";
 
 	// 结果目录
-	string res_dir = "D:/datasets/shelf/patch/query/easy/alignment";
+	string res_dir = "D:/datasets/shelf/patch/query/easy/alignment/brisk/ransac/center0_combine";
 	string res_match_dir = res_dir + "/match"; // 保存匹配结果
 	string res_align_dir = res_dir + "/result"; // 保存对齐结果
 
@@ -198,7 +218,7 @@ int main()
 	// 对每幅测试图像
 	for (vector<string>::const_iterator test_iter = test_names.begin(); test_iter != test_names.end(); test_iter++)
 	{
-		cout << "test image : " << *test_iter << endl;
+		cout << "test image : " << *test_iter;
 
 		// 读图像
 		Mat test_im = imread(test_im_dir + '/' + *test_iter + ".jpg");
@@ -206,24 +226,7 @@ int main()
 		// 读特征点坐标
 		vector<Point2f> test_kps;
 		load_kp_pos_txt(test_kp_dir + '/' + *test_iter + "_kp.txt", test_kps);
-
-		// 计算中心坐标
-		float left = test_im.cols, right = 0, top = test_im.rows, bottom = 0;
-		for (vector<Point2f>::const_iterator ite = test_kps.begin(); ite != test_kps.end(); ite++)
-		{
-			left = min(left, ite->x);
-			right = max(right, ite->x);
-			top = min(top, ite->y);
-			bottom = max(bottom, ite->y);
-		}
-		Point2f test_center((right - left) / 2, (bottom - top) / 2);
-
-		// 特征点坐标-中心坐标
-		for (vector<Point2f>::iterator ite = test_kps.begin(); ite != test_kps.end(); ite++)
-		{
-			ite->x -= test_center.x;
-			ite->y -= test_center.y;
-		}
+		cout << ", " << test_kps.size() << " keypoints" << endl;
 
 		// 对每幅模板图像
 		for (vector<string>::const_iterator ref_iter = ref_names.begin(); ref_iter != ref_names.end(); ref_iter++)
@@ -236,171 +239,101 @@ int main()
 			// 读特征点坐标
 			vector<Point2f> ref_kps;
 			load_kp_pos_txt(ref_kp_dir + '/' + *ref_iter + "_kp.txt", ref_kps);
+			cout << ", " << ref_kps.size() << " keypoints";
 
 			// 读特征点匹配关系
 			vector<MatchKpsSim> matches;
 			load_match_txt(word_dir + '/' + *test_iter + '_' + *ref_iter + ".txt", matches);
+			cout << ", " << matches.size() << " matches";
 
-			// 计算中心坐标
-			float left = ref_im.cols, right = 0, top = ref_im.rows, bottom = 0;
-			for (vector<Point2f>::const_iterator ite = ref_kps.begin(); ite != ref_kps.end(); ite++)
+			// 计算测试图像中心坐标 & 模板图像中心坐标, 保存特征点对坐标
+			float left_test = test_im.cols, left_ref = ref_im.cols;
+			float right_test = 0, right_ref = 0;
+			float top_test = test_im.rows, top_ref = ref_im.rows;
+			float bottom_test = 0, bottom_ref = 0;
+
+			vector<Point2f> test_kps_new, ref_kps_new;
+
+			for (int mi = 0; mi < matches.size(); mi++)
 			{
-				left = min(left, ite->x);
-				right = max(right, ite->x);
-				top = min(top, ite->y);
-				bottom = max(bottom, ite->y);
+				Point2f test_p = test_kps[matches[mi].test_pid];
+				Point2f ref_p = ref_kps[matches[mi].tmpl_pid];
+
+				test_kps_new.push_back(test_p);
+				ref_kps_new.push_back(ref_p);
+
+				left_test = min(left_test, test_p.x);
+				right_test = max(right_test, test_p.x);
+				top_test = min(top_test, test_p.y);
+				bottom_test = max(bottom_test, test_p.y);
+
+				left_ref = min(left_ref, ref_p.x);
+				right_ref = max(right_ref, ref_p.x);
+				top_ref = min(top_ref, ref_p.y);
+				bottom_ref = max(bottom_ref, ref_p.y);
 			}
-			Point2f ref_center((right - left) / 2, (bottom - top) / 2);
-
-			// 特征点坐标-中心坐标
-			for (vector<Point2f>::iterator ite = ref_kps.begin(); ite != ref_kps.end(); ite++)
+			Point2f test_center((right_test - left_test) / 2, (bottom_test - top_test) / 2);
+			Point2f ref_center((right_ref - left_ref) / 2, (bottom_ref - top_ref) / 2);
+		
+			// 测试图像特征点坐标 - 测试图像中心坐标
+			for (vector<Point2f>::iterator ite = test_kps_new.begin(); ite != test_kps_new.end(); ite++)
 			{
-				ite->x -= ref_center.x;
-				ite->y -= ref_center.y;
+				ite->x = ite->x - test_center.x;
+				ite->y = ite->y - test_center.y;
+			}
+
+			// 模板图像特征点坐标 - 模板图像中心坐标
+			for (vector<Point2f>::iterator ite = ref_kps_new.begin(); ite != ref_kps_new.end(); ite++)
+			{
+				ite->x = ite->x - ref_center.x;
+				ite->y = ite->y - ref_center.y;
 			}
 
 			/************************************************************************/
 			/* RANSAC求仿射矩阵                                                                     */
 			/************************************************************************/
-			const int AFFINE_MIN_MATCHES = 3;
-			const int RANSAC_MAX_ITERS = 1000;
-			const double AFFINE_REPROJ_THRESH = 3;
-			const int RANSAC_MIN_INLIERS = 1;
-
-			Mat A_mat_best(2, 3, CV_64F);
-			double best_err = numeric_limits<double>::max();
-
-			for (int ite = 0; ite < RANSAC_MAX_ITERS; ite++)
-			{
-				cout << "\t\tRANSAC iter = " << ite << endl;
-				// 随机选3对点
-				vector<int> maybe_inliers;
-				get_n_idx(AFFINE_MIN_MATCHES, 0, matches.size() - 1, maybe_inliers);
-				
-				vector<Point2f> test_sample, ref_sample;
-				for (int i = 0; i < AFFINE_MIN_MATCHES; i++)
-				{
-					test_sample.push_back(test_kps[matches[maybe_inliers[i]].test_pid]);
-					ref_sample.push_back(ref_kps[matches[maybe_inliers[i]].tmpl_pid]);
-				}
-
-				// 测试是否共线
-				if (is_colinear_3(test_sample, ref_sample))
-				{
-					continue;
-				}
-
-				// 求仿射矩阵
-				Mat A_mat = getAffineTransform(test_sample, ref_sample);
-
-				// 求没用来求仿射矩阵的匹配中的inliers
-				vector<int> also_inliers;
-				for (int mi = 0; mi < matches.size(); mi++)
-				{
-					// 如果没用来求仿射矩阵
-					if (find(maybe_inliers.begin(), maybe_inliers.end(), mi) == maybe_inliers.end())
-					{
-						// 测试图像中特征点坐标
-						Point2f p_test = test_kps[matches[mi].test_pid];
-
-						// 模板图像中特征点坐标
-						Point2f p_ref = ref_kps[matches[mi].tmpl_pid];
-
-						// 计算测试图像中特征点投影后的坐标
-						Point2f p_test_proj(
-							A_mat.at<double>(0, 0) * p_test.x + A_mat.at<double>(0, 1) * p_test.y + A_mat.at<double>(0, 2),
-							A_mat.at<double>(1, 0) * p_test.x + A_mat.at<double>(1, 1) * p_test.y + A_mat.at<double>(1, 2)
-							);
-
-						// 计算投影误差
-						double proj_err = sqrt(pow(p_test_proj.x - p_ref.x, 2) + pow(p_test_proj.y - p_ref.y, 2));
-
-						// 如果误差小于阈值, 加入inliers
-						if (proj_err <= AFFINE_REPROJ_THRESH)
-						{
-							also_inliers.push_back(mi);
-						}
-					}
-				}
-
-				// 如果没用来求仿射矩阵的匹配中inliers数量超过阈值, 则用全部inliers求参数
-				if (also_inliers.size() >= RANSAC_MIN_INLIERS)
-				{
-					// 用全部inliers求参数
-					vector<MatchKpsSim> all_inliers;
-					for (int i = 0; i < maybe_inliers.size(); i++)
-					{
-						all_inliers.push_back(matches[maybe_inliers[i]]);
-					}
-					for (int i = 0; i < also_inliers.size(); i++)
-					{
-						all_inliers.push_back(matches[also_inliers[i]]);
-					}
-
-					vector<double> a(6);
-					a[0] = A_mat.at<double>(0, 0);
-					a[1] = A_mat.at<double>(0, 1);
-					a[2] = A_mat.at<double>(0, 2);
-					a[3] = A_mat.at<double>(1, 0);
-					a[4] = A_mat.at<double>(1, 1);
-					a[5] = A_mat.at<double>(1, 2);
-
-					ObjectiveFunctionData* obj_func_data = 
-						new ObjectiveFunctionData(all_inliers, test_kps, ref_kps);
-					nlopt::opt opt(nlopt::LD_MMA, 6);
-					opt.set_min_objective(obj_func, obj_func_data);
-					opt.set_ftol_abs(0.5);
-					opt.set_stopval(3.0 * matches.size());
-
-					double min_f;
-					opt_iters = 0;
-					nlopt::result result = opt.optimize(a, min_f);
-
-					if (result > 0)
-					{
-						// 优化成功
-						// 如果误差比当前最好的小, 则更新A_mat_best和best_err
-						if (min_f < best_err)
-						{
-							best_err = min_f;
-							A_mat_best.at<double>(0, 0) = a[0];
-							A_mat_best.at<double>(0, 1) = a[1];
-							A_mat_best.at<double>(0, 2) = a[2];
-							A_mat_best.at<double>(1, 0) = a[3];
-							A_mat_best.at<double>(1, 1) = a[4];
-							A_mat_best.at<double>(1, 2) = a[5];
-						}
-					}
-					else
-					{
-						// 优化失败
-						continue;
-					}
-				}
-			}
+			vector<uchar> stat;
+			Mat A_mat = estimateAffine2D(test_kps_new, ref_kps_new, stat);
+			cout << ", " << countNonZero(Mat(stat)) << " inliers";
+			Mat A_mat_h = Mat::zeros(3, 3, CV_64F);
+			A_mat_h.at<double>(0, 0) = A_mat.at<double>(0, 0);
+			A_mat_h.at<double>(0, 1) = A_mat.at<double>(0, 1);
+			A_mat_h.at<double>(0, 2) = A_mat.at<double>(0, 2);
+			A_mat_h.at<double>(1, 0) = A_mat.at<double>(1, 0);
+			A_mat_h.at<double>(1, 1) = A_mat.at<double>(1, 1);
+			A_mat_h.at<double>(1, 2) = A_mat.at<double>(1, 2);
+			A_mat_h.at<double>(2, 2) = 1;
 
 			/************************************************************************/
 			/* 变换测试图像                                                                     */
 			/************************************************************************/
-			// 把测试图像中心与模板图像中心对齐
-			Mat T(2, 3, A_mat_best.type());
-			T.at<double>(0, 0) = T.at<double>(1, 1) = 1;
-			T.at<double>(0, 1) = T.at<double>(1, 0) = 0;
-			T.at<double>(0, 2) = -test_center.x + ref_center.x;
-			T.at<double>(1, 2) = -test_center.y + ref_center.y;
-			Mat T_im;
-			warpAffine(test_im, T_im, T, ref_im.size());
-			namedWindow("after aligning centers");
-			imshow("after aligning centers", T_im);
+			// 变换前, 测试图像原点移动到中心
+			Mat T_mat_pre = Mat::zeros(3, 3, CV_64F);
+			T_mat_pre.at<double>(0, 0) = T_mat_pre.at<double>(1, 1) = T_mat_pre.at<double>(2, 2) = 1;
+			T_mat_pre.at<double>(0, 2) = -test_center.x;
+			T_mat_pre.at<double>(1, 2) = -test_center.y;
+			cout << ", T_mat_pre = " << T_mat_pre;
+
+			// 变换后, 测试图像原点移动到模板图像中心
+			Mat T_mat_post = Mat::zeros(3, 3, CV_64F);
+			T_mat_post.at<double>(0, 0) = T_mat_post.at<double>(1, 1) = T_mat_post.at<double>(2, 2) = 1;
+			T_mat_post.at<double>(0, 2) = ref_center.x;
+			T_mat_post.at<double>(1, 2) = ref_center.y;
+			cout << ", T_mat_post = " << T_mat_post;
+
+			// 组合变换矩阵
+			Mat M_mat_h = T_mat_post * (A_mat_h * T_mat_pre);
+			Mat M_mat = M_mat_h(Range(0, 2), Range(0, 3));
+			cout << ", M_mat_h = " << M_mat_h;
+			cout << ", M_mat = " << M_mat;
 
 			// 仿射变换
-			Mat A_im;
-			warpAffine(T_im, A_im, A_mat_best, ref_im.size());
+			Mat M_im;
+			warpAffine(test_im, M_im, M_mat, ref_im.size());
 			namedWindow("after affine");
-			imshow("after affine", A_im);
-			//fs::path align_im_file = res_align_path / (*test_iter + "_" + *ref_iter + ".jpg");
-			//imwrite(align_im_file.string(), A_im);
-
+			imshow("after affine", M_im);
+			fs::path align_im_file = res_align_path / (*test_iter + "_" + *ref_iter + ".jpg");
+			imwrite(align_im_file.string(), M_im);
 
 			waitKey();
 
