@@ -98,6 +98,7 @@ opt_iters = 0;
 nlopt::result result = opt.optimize(a, min_f);
 */
 
+const double RANSAC_REPROJ_THRES = 3.0;
 
 int main()
 {
@@ -117,9 +118,10 @@ int main()
 	string ref_name_file = "D:/datasets/shelf/patch/ref/all/img_list_3_per_class.txt";
 
 	// 结果目录
-	string res_dir = "D:/datasets/shelf/patch/query/easy/alignment/brisk/ransac/center0_combine";
+	string res_dir = "D:/datasets/shelf/patch/query/easy/alignment/brisk/ransac/center0_combine_thres3";
 	string res_match_dir = res_dir + "/match"; // 保存匹配结果
 	string res_align_dir = res_dir + "/result"; // 保存对齐结果
+	string res_crop_dir = res_dir + "/crop"; // 保存裁剪结果
 
 	/************************************************************************/
 	/* 准备工作 : 检查目录是否存在, 读测试和模板图像名, 新建结果目录                                                                     */
@@ -212,6 +214,13 @@ int main()
 		cout << "res_align_path not exist, created" << endl;
 	}
 
+	fs::path res_crop_path(res_crop_dir);
+	if (!fs::exists(res_crop_path))
+	{
+		fs::create_directories(res_crop_path);
+		cout << "res_crop_path not exist, created" << endl;
+	}
+
 	/************************************************************************/
 	/* 对齐                                                                     */
 	/************************************************************************/
@@ -245,6 +254,28 @@ int main()
 			vector<MatchKpsSim> matches;
 			load_match_txt(word_dir + '/' + *test_iter + '_' + *ref_iter + ".txt", matches);
 			cout << ", " << matches.size() << " matches";
+
+			// 画出特征点匹配关系
+			{
+				// (Point2f转换成KeyPoint)
+				vector<KeyPoint> test_keypoints;
+				vector<KeyPoint> ref_keypoints;
+				KeyPoint::convert(test_kps, test_keypoints);
+				KeyPoint::convert(ref_kps, ref_keypoints);
+				// (MatchKpsSim转换成DMatch)
+				vector<DMatch> dmatches;
+				for (vector<MatchKpsSim>::const_iterator ite = matches.begin(); ite != matches.end(); ite++)
+				{
+					dmatches.push_back(DMatch(ite->test_pid, ite->tmpl_pid, 0));
+				}
+				// 用drawMatches画出来
+				Mat match_im;
+				drawMatches(test_im, test_keypoints,
+					ref_im, ref_keypoints,
+					dmatches, match_im);
+				fs::path match_im_file = res_match_path / (*test_iter + "_" + *ref_iter + ".jpg");
+				imwrite(match_im_file.string(), match_im);
+			}
 
 			// 计算测试图像中心坐标 & 模板图像中心坐标, 保存特征点对坐标
 			float left_test = test_im.cols, left_ref = ref_im.cols;
@@ -293,7 +324,8 @@ int main()
 			/* RANSAC求仿射矩阵                                                                     */
 			/************************************************************************/
 			vector<uchar> stat;
-			Mat A_mat = estimateAffine2D(test_kps_new, ref_kps_new, stat);
+			Mat A_mat = estimateAffine2D(test_kps_new, ref_kps_new, stat,
+				RANSAC, RANSAC_REPROJ_THRES);
 			cout << ", " << countNonZero(Mat(stat)) << " inliers";
 			Mat A_mat_h = Mat::zeros(3, 3, CV_64F);
 			A_mat_h.at<double>(0, 0) = A_mat.at<double>(0, 0);
@@ -312,20 +344,16 @@ int main()
 			T_mat_pre.at<double>(0, 0) = T_mat_pre.at<double>(1, 1) = T_mat_pre.at<double>(2, 2) = 1;
 			T_mat_pre.at<double>(0, 2) = -test_center.x;
 			T_mat_pre.at<double>(1, 2) = -test_center.y;
-			cout << ", T_mat_pre = " << T_mat_pre;
 
 			// 变换后, 测试图像原点移动到模板图像中心
 			Mat T_mat_post = Mat::zeros(3, 3, CV_64F);
 			T_mat_post.at<double>(0, 0) = T_mat_post.at<double>(1, 1) = T_mat_post.at<double>(2, 2) = 1;
 			T_mat_post.at<double>(0, 2) = ref_center.x;
 			T_mat_post.at<double>(1, 2) = ref_center.y;
-			cout << ", T_mat_post = " << T_mat_post;
 
 			// 组合变换矩阵
 			Mat M_mat_h = T_mat_post * (A_mat_h * T_mat_pre);
 			Mat M_mat = M_mat_h(Range(0, 2), Range(0, 3));
-			cout << ", M_mat_h = " << M_mat_h;
-			cout << ", M_mat = " << M_mat;
 
 			// 仿射变换
 			Mat M_im;
@@ -334,6 +362,74 @@ int main()
 			imshow("after affine", M_im);
 			fs::path align_im_file = res_align_path / (*test_iter + "_" + *ref_iter + ".jpg");
 			imwrite(align_im_file.string(), M_im);
+
+			// 画出inlier匹配
+			{
+				// (Point2f转换成KeyPoint)
+				vector<Point2f> test_points, ref_points;
+				vector<KeyPoint> test_keypoints, ref_keypoints;
+				for (int i = 0; i < stat.size(); i++)
+				{
+					if (stat[i] != 0)
+					{
+						test_points.push_back(
+							Point2f(test_kps_new[i].x + test_center.x, 
+								test_kps_new[i].y+test_center.y)
+						);
+						ref_points.push_back(
+							Point2f(ref_kps_new[i].x + ref_center.x,
+								ref_kps_new[i].y + ref_center.y)
+						);
+					}
+				}
+				KeyPoint::convert(test_points, test_keypoints);
+				KeyPoint::convert(ref_points, ref_keypoints);
+
+				// (转换成DMatch)
+				vector<DMatch> dmatches;
+				for (int mi = 0; mi < test_keypoints.size(); mi++)
+				{
+					dmatches.push_back(DMatch(mi, mi, 0));
+				}
+
+				// 用drawMatches画出来
+				Mat match_im;
+				drawMatches(test_im, test_keypoints,
+					ref_im, ref_keypoints,
+					dmatches, match_im);
+				fs::path match_im_file = res_match_path / (*test_iter + "_" + *ref_iter + "_inlier.jpg");
+				imwrite(match_im_file.string(), match_im);
+			}
+
+			// 用变换后的裁剪测试图像和模板图像
+			vector<Point2f> test_corners(4);
+			test_corners[0] = Point2f(0, 0);
+			test_corners[1] = Point2f(0, test_im.rows);
+			test_corners[2] = Point2f(test_im.cols, test_im.rows);
+			test_corners[3] = Point2f(test_im.cols, 0);
+
+			transform(test_corners, test_corners, M_mat);
+			vector<int> xs(4), ys(4);
+			for (int ci = 0; ci < test_corners.size(); ci++)
+			{
+				xs[ci] = test_corners[ci].x;
+				ys[ci] = test_corners[ci].y;
+			}
+			sort(xs.begin(), xs.end());
+			sort(ys.begin(), ys.end());
+
+			int start_r = min(max(ys[1], 0), ref_im.rows);
+			int start_c = min(max(xs[1], 0), ref_im.cols);
+			int end_r = max(min(ys[2], ref_im.rows), 0);
+			int end_c = max(min(xs[2], ref_im.cols), 0);
+
+			Mat test_crop_im = M_im(Range(start_r, end_r), Range(start_c, end_c));
+			fs::path test_crop_file = res_crop_path / (*test_iter + "_" + *ref_iter + "_test_crop.jpg");
+			imwrite(test_crop_file.string(), test_crop_im);
+
+			Mat ref_crop_im = ref_im(Range(start_r, end_r), Range(start_c, end_c));
+			fs::path ref_crop_file = res_crop_path / (*test_iter + "_" + *ref_iter + "_ref_crop.jpg");
+			imwrite(ref_crop_file.string(), ref_crop_im);
 
 			waitKey();
 
@@ -347,24 +443,5 @@ int main()
 }
 
 /*
-// 画出特征点匹配关系
-// (Point2f转换成KeyPoint)
-vector<KeyPoint> test_keypoints;
-vector<KeyPoint> ref_keypoints;
-KeyPoint::convert(test_kps, test_keypoints);
-KeyPoint::convert(ref_kps, ref_keypoints);
-// (MatchKpsSim转换成DMatch)
-vector<DMatch> dmatches;
-for (vector<MatchKpsSim>::const_iterator ite = matches.begin(); ite != matches.end(); ite++)
-{
-dmatches.push_back(DMatch(ite->test_pid, ite->tmpl_pid, 0));
-}
-// 用drawMatches画出来
-Mat match_im;
-drawMatches(test_im, test_keypoints,
-ref_im, ref_keypoints,
-dmatches, match_im);
-fs::path match_im_file = res_match_path / (*test_iter + "_" + *ref_iter + ".jpg");
-imwrite(match_im_file.string(), match_im);
-imshow("matches", match_im);
+
 */
