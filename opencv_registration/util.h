@@ -22,26 +22,11 @@ struct MatchKpsSim
 	int tmpl_pid;
 	double sim;
 
-	MatchKpsSim(int test_p, int tmpl_p, double s)
+	MatchKpsSim(int test_p, int tmpl_p, double s = 0)
 	{
 		test_pid = test_p;
 		tmpl_pid = tmpl_p;
 		sim = s;
-	}
-};
-
-// 优化时传给目标函数的数据
-struct ObjectiveFunctionData
-{
-	vector<MatchKpsSim> *matches;
-	vector<Point2f> *test_pts;
-	vector<Point2f> *tmpl_pts;
-
-	ObjectiveFunctionData(vector<MatchKpsSim>& matches_in, vector<Point2f>& test_pts_in, vector<Point2f>& tmpl_pts_in)
-	{
-		matches = &matches_in;
-		test_pts = &test_pts_in;
-		tmpl_pts = &tmpl_pts_in;
 	}
 };
 
@@ -68,4 +53,36 @@ void get_n_idx(int n, int min_idx, int max_idx, vector<int>& res);
 // [现在是检查p中3点是否共线, q中3点是否共线]
 // TODO : 是这样检查吗?
 bool is_colinear_3(vector<Point2f>& p, vector<Point2f>& q);
+
+// 画出特征点匹配关系
+// 没减掉中心坐标的版本
+Mat draw_MatchKpsSim(const vector<Point2f>& test_pts, const vector<Point2f>& ref_pts, 
+	const Mat& test_im, const Mat& ref_im,
+	const vector<MatchKpsSim>& matches);
+// 已经减掉中心坐标, 需要恢复
+Mat draw_MatchKpsSim(vector<Point2f>& test_pts, vector<Point2f>& ref_pts,
+	const Point2f& test_center, const Point2f& ref_center,
+	const Mat& test_im, const Mat& ref_im,
+	const vector<MatchKpsSim>& matches);
+
+
+// 优化相关
+// 优化时传给目标函数的数据
+struct ObjectiveFunctionData
+{
+	vector<MatchKpsSim> *matches;
+	vector<Point2f> *test_pts;
+	vector<Point2f> *tmpl_pts;
+
+	ObjectiveFunctionData(vector<MatchKpsSim>& matches_in, vector<Point2f>& test_pts_in, vector<Point2f>& tmpl_pts_in)
+	{
+		matches = &matches_in;
+		test_pts = &test_pts_in;
+		tmpl_pts = &tmpl_pts_in;
+	}
+};
+
+// 目标函数
+// a = {a11, a12, a13, a21, a22, a23}
+double obj_func(const vector<double> &a, vector<double> &grad, void *func_data);
 
