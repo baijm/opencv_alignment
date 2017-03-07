@@ -59,6 +59,7 @@
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
     <Import Project="..\..\..\environments\opencv_3_2_0\opencv320_x64_vc14_debug.props" />
     <Import Project="..\..\..\environments\boost_1_60_0\boost_1_60_0_x64.props" />
+    <Import Project="..\..\..\environments\nlopt-2.4.2-dll64\nlopt_2_4_2_64.props" />
   </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
@@ -67,6 +68,7 @@
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
     <Import Project="..\..\..\environments\opencv_3_2_0\opencv320_x64_vc14_release.props" />
     <Import Project="..\..\..\environments\boost_1_60_0\boost_1_60_0_x64.props" />
+    <Import Project="..\..\..\environments\nlopt-2.4.2-dll64\nlopt_2_4_2_64.props" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup />
