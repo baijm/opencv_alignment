@@ -179,45 +179,6 @@ Mat draw_MatchKpsSim(const vector<Point2f>& test_pts, const vector<Point2f>& ref
 	return match_im;
 }
 
-// 已经减掉中心坐标, 需要恢复
-Mat draw_MatchKpsSim(vector<Point2f>& test_pts, vector<Point2f>& ref_pts,
-	const Point2f& test_center, const Point2f& ref_center,
-	const Mat& test_im, const Mat& ref_im,
-	const vector<MatchKpsSim>& matches)
-{
-	// 恢复到原来的坐标
-	for (vector<Point2f>::iterator ite = test_pts.begin(); ite != test_pts.end(); ite++)
-	{
-		ite->x += test_center.x;
-		ite->y += test_center.y;
-	}
-	for (vector<Point2f>::iterator ite = ref_pts.begin(); ite != ref_pts.end(); ite++)
-	{
-		ite->x += ref_center.x;
-		ite->y += ref_center.y;
-	}
-
-	// (Point2f转换成KeyPoint)
-	vector<KeyPoint> test_kps, ref_kps;
-	KeyPoint::convert(test_pts, test_kps);
-	KeyPoint::convert(ref_pts, ref_kps);
-
-	// (MatchKpsSim转换成DMatch)
-	vector<DMatch> dmatches;
-	for (vector<MatchKpsSim>::const_iterator ite = matches.begin(); ite != matches.end(); ite++)
-	{
-		dmatches.push_back(DMatch(ite->test_pid, ite->tmpl_pid, 0));
-	}
-
-	// 用drawMatches画出来
-	Mat match_im;
-	drawMatches(test_im, test_kps,
-		ref_im, ref_kps,
-		dmatches, match_im);
-
-	return match_im;
-}
-
 // 优化相关
 // 目标函数
 // a = {a11, a12, a13, a21, a22, a23}
@@ -225,7 +186,7 @@ double obj_func(const vector<double> &a, vector<double> &grad, void *func_data)
 {
 	ObjectiveFunctionData *data = reinterpret_cast<ObjectiveFunctionData*>(func_data);
 	// TODO : 用引用给引用赋值会怎么样??
-	vector<MatchKpsSim> *matches = data->matches;
+	vector<DMatch> *matches = data->matches;
 	vector<Point2f> *test_pts = data->test_pts;
 	vector<Point2f> *ref_pts = data->tmpl_pts;
 
@@ -241,8 +202,8 @@ double obj_func(const vector<double> &a, vector<double> &grad, void *func_data)
 	double val = 0;
 	for (int i = 0; i < matches->size(); i++)
 	{
-		Point2f p_test = (*test_pts)[(*matches)[i].test_pid];
-		Point2f p_ref = (*ref_pts)[(*matches)[i].tmpl_pid];
+		Point2f p_test = (*test_pts)[(*matches)[i].queryIdx];
+		Point2f p_ref = (*ref_pts)[(*matches)[i].trainIdx];
 
 		Point2f p_test_new(
 			a[0] * p_test.x + a[1] * p_test.y + a[2],

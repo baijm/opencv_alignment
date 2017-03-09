@@ -27,9 +27,18 @@
     <ClCompile Include="affine_align.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="affine_align_ransac.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="my_detector.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="util.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="my_detector.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

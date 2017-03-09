@@ -1,5 +1,5 @@
 #include <opencv2/highgui/highgui.hpp>
-#include <opencv2/calib3d//calib3d.hpp>
+#include <opencv2/calib3d/calib3d.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
 #include <opencv2/features2d/features2d.hpp>
 
@@ -59,22 +59,16 @@ bool is_colinear_3(vector<Point2f>& p, vector<Point2f>& q);
 Mat draw_MatchKpsSim(const vector<Point2f>& test_pts, const vector<Point2f>& ref_pts, 
 	const Mat& test_im, const Mat& ref_im,
 	const vector<MatchKpsSim>& matches);
-// 已经减掉中心坐标, 需要恢复
-Mat draw_MatchKpsSim(vector<Point2f>& test_pts, vector<Point2f>& ref_pts,
-	const Point2f& test_center, const Point2f& ref_center,
-	const Mat& test_im, const Mat& ref_im,
-	const vector<MatchKpsSim>& matches);
-
 
 // 优化相关
 // 优化时传给目标函数的数据
 struct ObjectiveFunctionData
 {
-	vector<MatchKpsSim> *matches;
+	vector<DMatch> *matches;
 	vector<Point2f> *test_pts;
 	vector<Point2f> *tmpl_pts;
 
-	ObjectiveFunctionData(vector<MatchKpsSim>& matches_in, vector<Point2f>& test_pts_in, vector<Point2f>& tmpl_pts_in)
+	ObjectiveFunctionData(vector<DMatch> &matches_in, vector<Point2f> &test_pts_in, vector<Point2f> &tmpl_pts_in)
 	{
 		matches = &matches_in;
 		test_pts = &test_pts_in;
