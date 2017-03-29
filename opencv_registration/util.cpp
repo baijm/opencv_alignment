@@ -1,5 +1,6 @@
 #include "util.h"
 
+
 // y, x, size, angle
 void save_kp_txt(string txt_path, const vector<KeyPoint>& kp)
 {
@@ -17,9 +18,38 @@ void save_kp_txt(string txt_path, const vector<KeyPoint>& kp)
 	}
 }
 
-void load_kp_pos_txt(string txt_path, vector<Point2f>& kp)
+vector<KeyPoint> load_kp_txt(string txt_path)
 {
-	kp.clear();
+	vector<KeyPoint> res;
+
+	ifstream kp_txt(txt_path);
+	if (!kp_txt)
+	{
+		cout << "cannot open " << txt_path << " for reading" << endl;
+	}
+	else
+	{
+		string line;
+		vector<string> parts;
+		while (getline(kp_txt, line))
+		{
+			boost::split(parts, line, boost::is_any_of(" "));
+			res.push_back(KeyPoint(
+				atof(parts[1].c_str()), // x
+				atof(parts[0].c_str()), // y
+				atof(parts[2].c_str()), // size
+				atof(parts[3].c_str())// angle
+			));
+		}
+	}
+
+	return res;
+}
+
+vector<Point2f> load_kp_pos_txt(string txt_path)
+{
+	vector<Point2f> res;
+
 	ifstream kp_txt(txt_path);
 	if(!kp_txt)
 	{
@@ -33,10 +63,105 @@ void load_kp_pos_txt(string txt_path, vector<Point2f>& kp)
 		{
 			boost::split(parts, line, boost::is_any_of(" "));
 			// Point2f构造函数Point_(_Tp _x, _Tp _y);
-			kp.push_back(Point2f(atof(parts[1].c_str()), atof(parts[0].c_str())));
+			res.push_back(Point2f(
+				atof(parts[1].c_str()), 
+				atof(parts[0].c_str())
+			));
 		}
 	}
+
+	return res;
 }
+
+
+void save_des_txt(string des_path, const Mat& des)
+{
+	ofstream des_txt(des_path, ios::out);
+	if (!des_txt)
+	{
+		cout << "cannot open " << des_path << " for writing" << endl;
+	}
+	else
+	{
+		for (int i = 0; i < des.rows; i++) {
+			for (int j = 0; j < des.cols; j++) {
+				//des_txt << int(des.at<uchar>(i, j)) << ' ';
+				des_txt << *(float *)(des.data + des.step[0] * i + des.step[1] * j) << " ";
+			}
+			des_txt << endl;
+		}
+		des_txt.close();
+	}
+}
+
+Mat load_des_txt(string des_path)
+{
+	ifstream des_txt(des_path);
+	if (!des_txt)
+	{
+		cout << "cannot open " << des_path << " for reading" << endl;
+
+		Mat res;
+		return res;
+	}
+	else
+	{
+		string line;
+		vector<string> parts;
+		vector<vector<float>> buffer;
+		while (getline(des_txt, line))
+		{
+			boost::split(parts, line, boost::is_any_of(" "));
+			parts.pop_back(); // 去掉最后一个" "
+
+			vector<float> tmp;
+			for (int pi = 0; pi < parts.size(); pi++)
+			{
+				tmp.push_back(atof(parts[pi].c_str()));
+			}
+			buffer.push_back(tmp);
+		}
+
+		//CV_32F
+		Mat res(buffer.size(), buffer[0].size(), CV_32F);
+		for (int pi = 0; pi < buffer.size(); pi++)
+		{
+			for (int ii = 0; ii < buffer[pi].size(); ii++)
+			{
+				res.at<float>(pi, ii) = buffer[pi][ii];
+			}
+		}
+
+		return res;
+	}
+}
+
+
+vector<int> load_logo_region(string txt_path)
+{
+	vector<int> res;
+	
+	ifstream region_txt(txt_path);
+	if (!region_txt)
+	{
+		cout << "cannot open " << txt_path << " for reading" << endl;
+	}
+	else
+	{
+		string line;
+		vector<string> parts;
+
+		getline(region_txt, line);
+		boost::split(parts, line, boost::is_any_of(" "));
+		for (int pi = 0; pi < 4; pi++)
+		{
+			res.push_back(atoi(parts[pi].c_str()));
+		}
+	}
+
+	return res;
+}
+
 
 void load_match_txt(string txt_path, vector<MatchKpsSim>& matches)
 {
@@ -56,30 +181,6 @@ void load_match_txt(string txt_path, vector<MatchKpsSim>& matches)
 			boost::split(parts, line, boost::is_any_of(" "));
 			matches.push_back(MatchKpsSim(atoi(parts[0].c_str())-1, atoi(parts[1].c_str())-1, atof(parts[2].c_str())));
 		}
-	}
-}
-
-void load_des_txt(string des_path, Mat& des)
-{
-	
-}
-
-void save_des_txt(string des_path, const Mat& des)
-{
-	ofstream des_txt(des_path, ios::out);
-	if (!des_txt)
-	{
-		cout << "cannot open " << des_path << " for writing" << endl;
-	}
-	else
-	{
-		for (int i = 0; i < des.rows; i++) {
-			for (int j = 0; j < des.cols; j++) {
-				des_txt << int(des.at<uchar>(i, j)) << ' ';
-			}
-			des_txt << endl;
-		}
-		des_txt.close();
 	}
 }
 
@@ -107,6 +208,20 @@ void save_brisk(string img_dir, string img_name, string save_dir)
 	string desname = save_dir + txtname + "_des.txt";
 	save_des_txt(desname, des);
 }
+
+/*
+void compute_and_save_sift(string img_name, Mat& im_g, vector<KeyPoint>& kps, string save_dir)
+{
+	// feature detect
+	cv::Ptr<cv::FeatureDetector> detector = cv::xfeatures2d::SIFT::create();
+
+	Mat des;
+	detector->compute(im_g, kps, des);
+
+	string des_name = save_dir + "/" + img_name + "_des.txt";
+	save_des_txt(des_name, des);
+}
+*/
 
 // RANSAC相关
 // 随机从[min_idx, max_idx]的下标中选n个不重复的加入到idx
@@ -230,21 +345,26 @@ double obj_func(const vector<double> &a, vector<double> &grad, void *func_data)
 	return val;
 }
 
-
 /*
 int main()
 {
-	ifstream imglist("D:\\datasets\\shelf\\patch\\query\\easy\\img_list_bbx_crop.txt");
-	string img_dir = "D:\\datasets\\shelf\\patch\\query\\easy\\crop\\";
-	string briskfolder = "D:\\datasets\\shelf\\patch\\query\\easy\\crop_brisk\\";		//txt save folder
-	string img_name;
+	string root_dir = "D:/datasets/vobile_project/shelf/shampoo/test/12_classified_2852";
+	string cls_name = "2-prjyqx";
 
-	if (!imglist){
+	ifstream img_list(root_dir + "/" + cls_name + ".txt");
+	string img_dir = root_dir + "/" + cls_name;
+	string kp_dir = 
+
+	string res_dir = "D:/datasets/vobile_project/shelf/shampoo/test/15_x_split_sift_txt";
+	res_dir += ("/" + cls_name);
+
+	if (!img_list){
 		cout << "Unable to open imglist";
 		exit(1);
 	}
 
-	while (getline(imglist, img_name)){
+	string img_name;
+	while (getline(img_list, img_name)){
 		save_brisk(img_dir, img_name + ".jpg", briskfolder);
 	}
 

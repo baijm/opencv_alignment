@@ -30,20 +30,35 @@ struct MatchKpsSim
 	}
 };
 
+
+// 保存特征点信息到txt文件, 每一行依次是y x size angle
 void save_kp_txt(string txt_path, const vector<KeyPoint>& kp);
+// 读取_kp.txt文件, 保留特征点所有信息
+vector<KeyPoint> load_kp_txt(string txt_path);
+// 读取_kp.txt文件, 只保留特征点位置
+vector<Point2f> load_kp_pos_txt(string txt_path);
 
+
+// 保存描述子到txt文件, 每一行是一个特征向量
 void save_des_txt(string des_path, const Mat& des);
+// 读取_des.txt文件
+Mat load_des_txt(string txt_path);
 
-// 读取_kp.txt文件
-void load_kp_pos_txt(string txt_path, vector<Point2f>& kp);
 
 // 读取matlab输出的word文件, 其中每一行为一个匹配的测试图像特征点索引, 模板图像特征点索引, 相似度
 // [因为matlab索引从1开始, 此处所有索引-1]
 void load_match_txt(string txt_path, vector<MatchKpsSim>& matches);
 
-void load_des_txt(string des_path, Mat& des);
 
+// 读取logo矩形, 按照最小y坐标, 最大y坐标, 最小x坐标, 最大x坐标返回
+vector<int> load_logo_region(string txt_path);
+
+
+// 保存brisk特征
 void save_brisk(string img_dir, string img_name, string save_dir);
+// 保存SIFT特征
+//void compute_and_save_sift(string img_name, Mat& im_g, vector<KeyPoint>& kps, string save_dir);
+
 
 // RANSAC相关
 // 随机从[min_idx, max_idx]的下标中选n个不重复的加入到idx

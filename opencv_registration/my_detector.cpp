@@ -116,6 +116,7 @@ void PosPortionFilter::filter(std::vector<cv::DMatch> &matches, std::vector<cv::
 }
 
 // 用上下左右4个点求仿射矩阵
+/*
 bool Point4AffineEstimator::estimate_affine_matrix(
 	std::vector<cv::KeyPoint> &test_kps, std::vector<cv::KeyPoint> &ref_kps,
 	std::vector<cv::DMatch> &matches,
@@ -177,10 +178,10 @@ bool Point4AffineEstimator::estimate_affine_matrix(
 	inliers.push_back(matches[bottom_match_idx]);
 
 	// 求图像中心
-	test_center.x = abs(right_x_test - left_x_test) / 2;
-	test_center.y = abs(bottom_y_test - top_y_test) / 2;
-	ref_center.x = abs(right_x_ref - left_x_ref) / 2;
-	ref_center.y = abs(bottom_y_ref - top_y_ref) / 2;
+	test_center.x = (right_x_test + left_x_test) / 2;
+	test_center.y = (bottom_y_test + top_y_test) / 2;
+	ref_center.x = (right_x_ref + left_x_ref) / 2;
+	ref_center.y = (bottom_y_ref + top_y_ref) / 2;
 
 	// 特征点坐标 - 中心坐标
 	std::vector<cv::Point2f> test_pts, ref_pts;
@@ -240,6 +241,7 @@ bool Point4AffineEstimator::estimate_affine_matrix(
 		return true;
 	}
 }
+*/
 
 // 用RANSAC求仿射矩阵
 bool RansacAffineEstimator::estimate_affine_matrix(
@@ -278,10 +280,10 @@ bool RansacAffineEstimator::estimate_affine_matrix(
 		bottom_y_ref = (ref_p.y > bottom_y_ref) ? ref_p.y : bottom_y_ref;
 	}
 
-	test_center.x = abs(right_x_test - left_x_test) / 2;
-	test_center.y = abs(bottom_y_test - top_y_test) / 2;
-	ref_center.x = abs(right_x_ref - left_x_ref) / 2;
-	ref_center.y = abs(bottom_y_ref - top_y_ref) / 2;
+	test_center.x = (right_x_test + left_x_test) / 2;
+	test_center.y = (bottom_y_test + top_y_test) / 2;
+	ref_center.x = (right_x_ref + left_x_ref) / 2;
+	ref_center.y = (bottom_y_ref + top_y_ref) / 2;
 
 	// 特征点坐标 - 中心坐标
 	for (int i = 0; i < test_pts.size(); i++)

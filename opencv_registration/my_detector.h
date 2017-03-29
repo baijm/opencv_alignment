@@ -6,7 +6,7 @@
 #include <opencv2/imgproc.hpp>
 //#include <opencv2/features2d.hpp>
 
-#include <nlopt.hpp>
+//#include <nlopt.hpp>
 
 #include <string>
 #include <vector>
@@ -106,21 +106,23 @@ public:
 		cv::Mat &A_mat) = 0;
 };
 
+/*
 // 用上下左右4个点求仿射矩阵
 class Point4AffineEstimator : public MyAffineEstimator
 {
 private:
-	double reproj_thres;
+double reproj_thres;
 
 public:
-	Point4AffineEstimator(double r_th = 3.0) : reproj_thres(r_th) {};
+Point4AffineEstimator(double r_th = 3.0) : reproj_thres(r_th) {};
 
-	bool estimate_affine_matrix(
-		std::vector<cv::KeyPoint> &test_kps, 
-		std::vector<cv::KeyPoint> &ref_kps, 
-		std::vector<cv::DMatch> &matches,
-		cv::Mat &A_mat);
+bool estimate_affine_matrix(
+std::vector<cv::KeyPoint> &test_kps,
+std::vector<cv::KeyPoint> &ref_kps,
+std::vector<cv::DMatch> &matches,
+cv::Mat &A_mat);
 };
+*/
 
 // 用RANSAC求仿射矩阵
 class RansacAffineEstimator : public MyAffineEstimator
