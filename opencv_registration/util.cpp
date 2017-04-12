@@ -41,6 +41,8 @@ vector<KeyPoint> load_kp_txt(string txt_path)
 				atof(parts[3].c_str())// angle
 			));
 		}
+
+		kp_txt.close();
 	}
 
 	return res;
@@ -68,6 +70,8 @@ vector<Point2f> load_kp_pos_txt(string txt_path)
 				atof(parts[0].c_str())
 			));
 		}
+
+		kp_txt.close();
 	}
 
 	return res;
@@ -132,19 +136,20 @@ Mat load_des_txt(string des_path)
 			}
 		}
 
+		des_txt.close();
+
 		return res;
 	}
 }
 
 
-vector<int> load_logo_region(string txt_path)
+RegionCoords load_region_txt(string txt_path)
 {
-	vector<int> res;
-	
 	ifstream region_txt(txt_path);
 	if (!region_txt)
 	{
 		cout << "cannot open " << txt_path << " for reading" << endl;
+		return RegionCoords();
 	}
 	else
 	{
@@ -153,17 +158,18 @@ vector<int> load_logo_region(string txt_path)
 
 		getline(region_txt, line);
 		boost::split(parts, line, boost::is_any_of(" "));
-		for (int pi = 0; pi < 4; pi++)
-		{
-			res.push_back(atoi(parts[pi].c_str()));
-		}
-	}
 
-	return res;
+		return RegionCoords(
+			atoi(parts[0].c_str()), // xmin
+			atoi(parts[1].c_str()), // xmax
+			atoi(parts[2].c_str()), // ymin
+			atoi(parts[3].c_str()) // ymax
+		);
+	}
 }
 
 
-void load_match_txt(string txt_path, vector<MatchKpsSim>& matches)
+void load_match_txt(string txt_path, vector<DMatch>& matches)
 {
 	matches.clear();
 
@@ -179,8 +185,13 @@ void load_match_txt(string txt_path, vector<MatchKpsSim>& matches)
 		while (getline(txt, line))
 		{
 			boost::split(parts, line, boost::is_any_of(" "));
-			matches.push_back(MatchKpsSim(atoi(parts[0].c_str())-1, atoi(parts[1].c_str())-1, atof(parts[2].c_str())));
+			matches.push_back(
+				DMatch(atoi(parts[0].c_str()) - 1, // _queryIdx
+					atoi(parts[1].c_str()) - 1, // _trainIdx
+					0)); // _distance
 		}
+
+		txt.close();
 	}
 }
 
@@ -222,77 +233,6 @@ void compute_and_save_sift(string img_name, Mat& im_g, vector<KeyPoint>& kps, st
 	save_des_txt(des_name, des);
 }
 */
-
-// RANSAC相关
-// 随机从[min_idx, max_idx]的下标中选n个不重复的加入到idx
-void get_n_idx(int n, int min_idx, int max_idx, vector<int>& res)
-{
-	res.clear();
-
-	while (res.size() != n)
-	{
-		srand((int)time(NULL));
-		int idx = rand()%(max_idx-min_idx+1)+min_idx;
-		if (find(res.begin(), res.end(), idx) != res.end())
-		{
-			continue;
-		}
-		else
-		{
-			res.push_back(idx);
-		}
-	}
-}
-
-// 检查3对点是否共线
-bool is_colinear_3(vector<Point2f>& p, vector<Point2f>& q)
-{
-	// 如果不是3对点, 返回true
-	if (p.size() != 3 || q.size() != 3)
-	{
-		return true;
-	}
-
-	// 如果有重复点, 返回true
-	if (p[0] == p[1] || p[0] == p[2] || p[1] == p[2] || q[0] == q[1] || q[0] == q[2] || q[1] == q[2])
-	{
-		return true;
-	}
-
-	Point2f p01(p[1].x - p[0].x, p[1].y - p[0].y);
-	Point2f p02(p[2].x - p[0].x, p[2].y - p[0].y);
-	Point2f q01(q[1].x - q[0].x, q[1].y - q[0].y);
-	Point2f q02(q[2].x - q[0].x, q[2].y - q[0].y);
-
-	return p01.cross(p02) == 0 || q01.cross(q02) == 0;
-}
-
-// 画出特征点匹配关系
-// 没减掉中心坐标的版本
-Mat draw_MatchKpsSim(const vector<Point2f>& test_pts, const vector<Point2f>& ref_pts,
-	const Mat& test_im, const Mat& ref_im,
-	const vector<MatchKpsSim>& matches)
-{
-	// (Point2f转换成KeyPoint)
-	vector<KeyPoint> test_kps, ref_kps;
-	KeyPoint::convert(test_pts, test_kps);
-	KeyPoint::convert(ref_pts, ref_kps);
-
-	// (MatchKpsSim转换成DMatch)
-	vector<DMatch> dmatches;
-	for (vector<MatchKpsSim>::const_iterator ite = matches.begin(); ite != matches.end(); ite++)
-	{
-		dmatches.push_back(DMatch(ite->test_pid, ite->tmpl_pid, 0));
-	}
-
-	// 用drawMatches画出来
-	Mat match_im;
-	drawMatches(test_im, test_kps,
-		ref_im, ref_kps,
-		dmatches, match_im);
-	
-	return match_im;
-}
 
 // 优化相关
 // 目标函数

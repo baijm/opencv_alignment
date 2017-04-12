@@ -301,7 +301,7 @@ bool RansacAffineEstimator::estimate_affine_matrix(
 	std::vector<uchar> stat;
 	A_mat = estimateAffine2D(test_pts, ref_pts, stat,
 		RANSAC, reproj_thres);
-	std::cout << "found " << countNonZero(stat) << " inliers" << std::endl;
+	//std::cout << "found " << countNonZero(stat) << " inliers" << std::endl;
 
 	// ±£´æinliers
 	inliers.clear();

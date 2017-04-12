@@ -1,5 +1,5 @@
-#ifndef _MY_DETECTOR
-#define _MY_DETECTOR
+#ifndef _MY_DETECTOR_H
+#define _MY_DETECTOR_H
 
 //#include <opencv2/opencv.hpp>
 #include <opencv2/xfeatures2d.hpp>
@@ -140,4 +140,4 @@ public:
 		cv::Mat &A_mat);
 };
 
-#endif // !_MY_DETECTOR
+#endif // !_MY_DETECTOR_H
