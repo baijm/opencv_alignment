@@ -104,6 +104,11 @@ public:
 		std::vector<cv::KeyPoint> &ref_kps, 
 		std::vector<cv::DMatch> &matches,
 		cv::Mat &A_mat) = 0;
+
+	virtual bool estimate_affine_matrix(
+		std::vector<cv::Point2f> &test_pts,
+		std::vector<cv::Point2f> &ref_pts,
+		cv::Mat &A_mat) = 0;
 };
 
 /*
@@ -137,6 +142,11 @@ public:
 		std::vector<cv::KeyPoint> &test_kps, 
 		std::vector<cv::KeyPoint> &ref_kps, 
 		std::vector<cv::DMatch> &matches,
+		cv::Mat &A_mat);
+
+	bool estimate_affine_matrix(
+		std::vector<cv::Point2f> &test_pts,
+		std::vector<cv::Point2f> &ref_pts,
 		cv::Mat &A_mat);
 };
 

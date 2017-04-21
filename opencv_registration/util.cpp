@@ -195,6 +195,32 @@ void load_match_txt(string txt_path, vector<DMatch>& matches)
 	}
 }
 
+void load_match_pts_txt(string txt_path, vector<Point2f>& test_pts, vector<Point2f>& ref_pts)
+{
+	test_pts.clear();
+	ref_pts.clear();
+	
+	ifstream txt(txt_path);
+	if (!txt)
+	{
+		cout << "cannot open " << txt_path << "for reading" << endl;
+	}
+	else
+	{
+		string line;
+		vector<string> parts;
+		while (getline(txt, line))
+		{
+			boost::split(parts, line, boost::is_any_of(" "));
+			test_pts.push_back(Point2f(atof(parts[0].c_str()), atof(parts[1].c_str())));
+			ref_pts.push_back(Point2f(atof(parts[2].c_str()), atof(parts[3].c_str())));
+		}
+
+		txt.close();
+	}
+}
+
+
 void save_brisk(string img_dir, string img_name, string save_dir)
 {
 	string imgpath = img_dir + img_name;

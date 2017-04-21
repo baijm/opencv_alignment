@@ -18,13 +18,13 @@
     <ClCompile Include="util.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="affine_align.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="my_detector.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="save_sift.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="main.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

@@ -26,6 +26,16 @@ struct RegionCoords {
 
 	RegionCoords(int xmin_in, int xmax_in, int ymin_in, int ymax_in)
 		:xmin(xmin_in), xmax(xmax_in), ymin(ymin_in), ymax(ymax_in) {}
+
+	// 返回左上角坐标
+	Point2f tl() {
+		return Point2f(xmin, ymin);
+	}
+
+	// 返回右下角坐标
+	Point2f br() {
+		return Point2f(xmax, ymax);
+	}
 };
 
 // 保存matlab输出的word文件中每一行的内容
@@ -65,6 +75,9 @@ RegionCoords load_region_txt(string txt_path);
 // 读取matlab输出的word文件, 其中每一行为一个匹配的测试图像特征点索引, 模板图像特征点索引, 相似度
 // [因为matlab索引从1开始, 此处所有索引-1]
 void load_match_txt(string txt_path, vector<DMatch>& matches);
+// 读取recurrent pattern匹配点对
+// 每一行依次是: test_p_x test_p_y tmpl_p_x tmpl_p_y
+void load_match_pts_txt(string txt_path, vector<Point2f>& test_pts, vector<Point2f>& ref_pts);
 
 
 // 保存brisk特征
