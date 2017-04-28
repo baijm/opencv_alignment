@@ -20,66 +20,73 @@ using namespace cv;
 int main()
 {
 	/*****************************************************************
-	* 数据目录
+	* 读配置文件
 	******************************************************************/
-	// 图像等输入的根目录
-	string root_dir = "D:/datasets/vobile_project/shelf/shampoo/test";
-	
+	string config_file = "config.yml";
+	FileStorage conf_fs(config_file, FileStorage::READ);
+	if (!conf_fs.isOpened())
+	{
+		cout << "failed to open file config.yml" << endl;
+		return -1;
+	}
 
-	// 测试图像
-	// - 品牌
-	string brand_name = "pr";
+	// -------------- 测试图像相关 -----------------------------------
+	// 测试图像目录
+	string test_im_dir;
+	conf_fs["test_im_dir"] >> test_im_dir;
+	// 测试图像名列表文件
+	string test_name_file;
+	conf_fs["test_name_file"] >> test_name_file;
+	// 测试图像recurrent pattern粗分类结果文件
+	string test_rp_file;
+	conf_fs["test_rp_file"] >> test_rp_file;
+	// 测试图像recurrent pattern粗分类特征匹配结果目录
+	string test_rp_match_dir;
+	conf_fs["test_rp_match_dir"] >> test_rp_match_dir;
 
-	//	- 图像位置
-	string test_im_dir = root_dir + "/5_x_split_img_2852";
-	//	- 图像名列表
-	string test_name_file = root_dir + "/16_recurrent_pattern_brand_result" 
-		+ "/" + "rp_" + brand_name + "_all.txt";
-	//	- recurrent pattern粗分类结果
-	//		- 测试图像名->label0, label1
-	string test_rp_file = root_dir + "/16_recurrent_pattern_brand_result"
-		+ "/classification_2_labels.txt";
-	//		- 特征匹配结果
-	string test_rp_match_dir = root_dir + "/26_match_result-multi_obj"
-		+ "/result-" + brand_name + "/match_list";
+	// -------------- 模板图像相关 -----------------------------------
+	// 模板图像目录
+	string tmpl_im_dir;
+	conf_fs["tmpl_im_dir"] >> tmpl_im_dir;
+	// 模板图像valid region目录
+	string tmpl_valid_dir;
+	conf_fs["tmpl_valid_dir"] >> tmpl_valid_dir;
+	// 粗分类类名->模板图像名映射文件
+	string cls_name2tmpl_file;
+	conf_fs["cls_name2tmpl_file"] >> cls_name2tmpl_file;
+	// 粗分类label->粗分类类名映射文件
+	string cls_id2name_file;
+	conf_fs["cls_id2name_file"] >> cls_id2name_file;
 
+	// ------------------- 结果目录 ----------------------------------
+	// 保存在图像上画出特征匹配的结果
+	string res_match_dir;
+	conf_fs["res_match_dir"] >> res_match_dir;
+	// 保存未裁剪的测试图像对齐结果
+	string res_align_dir;
+	conf_fs["res_align_dir"] >> res_align_dir;
+	// 保存裁剪后的测试图像对齐结果
+	string res_crop_dir;
+	conf_fs["res_crop_dir"] >> res_crop_dir;
+	// 保存把模板图像有效区域变换到测试图像产生的包围盒坐标
+	string res_box_dir;
+	conf_fs["res_box_dir"] >> res_box_dir;
 
-	// 模板图像
-	//	- 图像位置
-	string ref_im_dir = root_dir + "/15_tmpl_new_center" 
-		+ "/img_padding_black";
-	// valid region文件(其中每一行依次是xmin, xmax, ymin, ymax)
-	string ref_valid_dir = root_dir + "/15_tmpl_new_center"
-		+ "/coords_valid_region";
+	// ------------------ 保存选项 -----------------------------------
+	// 全部匹配和inlier画在图像上的结果
+	bool save_match; 
+	conf_fs["save_match"] >> save_match;
+	// 在_corner.txt中保存左上, 左下, 右上, 右下点的坐标
+	bool save_align; 
+	conf_fs["save_align"] >> save_align;
+	// 在_test_crop.jpg中保存裁剪后的测试图像
+	bool save_crop; 
+	conf_fs["save_crop"] >> save_crop;
+	// 保存把模板图像变换到测试图像产生的候选包围盒
+	bool save_box;
+	conf_fs["save_box"] >> save_box;
 
-
-	// 类名->模板图像名
-	string cls_name2tmpl_file = root_dir + "/15_tmpl_new_center" 
-		+ "/cls_name_2_tmpl.txt";
-
-	// 粗分类label->类名
-	string cls_id2name_file = root_dir + "/16_recurrent_pattern_brand_result"
-		+ "/label_2_name.txt";
-
-
-	// 结果目录
-	string res_root_dir = root_dir + "/35_aligned_rp_rp_crop_valid_multi" + "/" + brand_name;
-	string res_kp_dir = res_root_dir + "/keypoint"; // 保存特征提取结果
-	string res_match_dir = res_root_dir + "/match"; // 保存匹配结果
-	string res_align_dir = res_root_dir + "/result"; // 保存对齐结果
-	string res_crop_dir = res_root_dir + "/crop"; // 保存裁剪结果
-	string res_box_dir = res_root_dir + "/box_coord";
-
-
-	/*****************************************************************
-	* 选项
-	******************************************************************/
-	// 保存选项
-	bool save_kp = false; // 保存特征点画在图像上的结果
-	bool save_match = false; // 保存全部匹配和inlier
-	bool save_align = false; // 如果是true, 则同时在_corner.txt中保存左上, 左下, 右上, 右下点的坐标
-	bool save_crop = false; // 保存_test_crop.jpg
-	bool save_box = true; // 
+	conf_fs.release();
 
 	/*******************************************************************
 	*	初始化
@@ -87,21 +94,18 @@ int main()
 	// 求解仿射矩阵的方法
 	MyAffineEstimator *estimator = new RansacAffineEstimator();
 
-	/************************************************************************/
-	/* 准备工作 : 检查目录是否存在, 读测试和模板图像名, 新建结果目录                                                                     */
-	/************************************************************************/
 	// 检查图像目录
 	fs::path test_im_path(test_im_dir);
 	if (!fs::exists(test_im_path))
 	{
-		std::cout << "test_im_dir not exist" << std::endl;
+		std::cout << "test_im_dir " << test_im_dir << " not exist" << std::endl;
 		return -1;
 	}
 	
-	fs::path ref_im_path(ref_im_dir);
-	if (!fs::exists(ref_im_path))
+	fs::path tmpl_im_path(tmpl_im_dir);
+	if (!fs::exists(tmpl_im_path))
 	{
-		std::cout << "ref_im_dir not exist" << std::endl;
+		std::cout << "tmpl_im_dir " << tmpl_im_dir << " not exist" << std::endl;
 		return -1;
 	}
 	
@@ -109,26 +113,19 @@ int main()
 	fs::path test_rp_match_path(test_rp_match_dir);
 	if (!fs::exists(test_rp_match_path))
 	{
-		std::cout << "test_rp_match_dir not exist" << std::endl;
+		std::cout << "test_rp_match_dir " << test_rp_match_dir << " not exist" << std::endl;
 		return -1;
 	}
 
 	// 检查模板图像valid region目录
-	fs::path ref_valid_path(ref_valid_dir);
-	if (!fs::exists(ref_valid_path))
+	fs::path tmpl_valid_path(tmpl_valid_dir);
+	if (!fs::exists(tmpl_valid_path))
 	{
-		std::cout << "ref_valid_dir not exist" << std::endl;
+		std::cout << "tmpl_valid_dir " << tmpl_valid_dir << " not exist" << std::endl;
 		return -1;
 	}
 
 	// 新建结果文件夹
-	fs::path res_kp_path(res_kp_dir);
-	if (!fs::exists(res_kp_path))
-	{
-		fs::create_directories(res_kp_path);
-		std::cout << "res_kp_dir not exist, created" << std::endl;
-	}
-
 	fs::path res_match_path(res_match_dir);
 	if (!fs::exists(res_match_path))
 	{
@@ -247,7 +244,7 @@ int main()
 
 	// log
 	string now_str = boost::posix_time::to_iso_string(boost::posix_time::second_clock::local_time());
-	ofstream res_log(res_root_dir + "/" + "log_" + now_str + ".txt");
+	ofstream res_log("log_" + now_str + ".txt");
 
 	// 模板图像名->彩色图像映射
 	unordered_map<string, Mat> ref_name2imc;
@@ -317,7 +314,7 @@ int main()
 				Mat ref_im_c, ref_im_g;
 				if (ref_name2imc.find(*rite) == ref_name2imc.end())
 				{
-					ref_im_c = imread(ref_im_dir + '/' + *rite + ".jpg");
+					ref_im_c = imread(tmpl_im_dir + '/' + *rite + ".jpg");
 					cvtColor(ref_im_c, ref_im_g, CV_BGR2GRAY);
 
 					ref_name2imc[*rite] = ref_im_c;
@@ -336,7 +333,7 @@ int main()
 				RegionCoords ref_valid;
 				if (ref_name2valid.find(*rite) == ref_name2valid.end())
 				{
-					ref_valid = load_region_txt(ref_valid_dir + "/" + *rite + ".txt");
+					ref_valid = load_region_txt(tmpl_valid_dir + "/" + *rite + ".txt");
 					ref_name2valid[*rite] = ref_valid;
 				}
 				else
@@ -524,104 +521,13 @@ int main()
 							<< trans_ref_valid.ymax << std::endl;
 					}
 				}
-
-				// 拒绝不合理的变换, 用变换后的裁剪测试图像和模板图像
-				/*
-				std::cout << ",\t";
-				res_log << ",\t";
-
-				// 求测试图像4个角变换后的坐标
-				vector<Point2f> test_corners(4);
-				test_corners[0] = Point2f(0, 0); // 左上
-				test_corners[1] = Point2f(0, test_im_size.height); // 左下
-				test_corners[2] = Point2f(test_im_size.width, test_im_size.height); // 右下
-				test_corners[3] = Point2f(test_im_size.width, 0); // 右上
-				transform(test_corners, test_corners, M_mat);
-
-				// 如果save_align是true, 则把变换后四个角的坐标保存到res_align_dir的_corner.txt里
-				// 依次保存左上, 左下, 右上, 右下点的坐标(先y后x)
-				if (save_align)
-				{
-					fs::path align_corner_file = res_align_path / (*test_iter + "_" + *rite + "_corner.txt");
-					ofstream corner_txt(align_corner_file.string(), ios::out);
-
-					// 左上角
-					corner_txt << test_corners[0].y << " " << test_corners[0].x << std::endl;
-					// 左下角
-					corner_txt << test_corners[1].y << " " << test_corners[1].x << std::endl;
-					// 右上角
-					corner_txt << test_corners[3].y << " " << test_corners[3].x << std::endl;
-					// 右下角
-					corner_txt << test_corners[2].y << " " << test_corners[2].x << std::endl;
-
-					corner_txt.close();
-				}
-
-				// 如果x方向顺序不对, 则拒绝
-				if (!(test_corners[0].x < min(test_corners[2].x, test_corners[3].x))
-					||
-					!(test_corners[1].x < min(test_corners[2].x, test_corners[3].x)))
-				{
-					res_log << "rejected because wrong relative position in x direction" << std::endl;
-					std::cout << "rejected because wrong relative position in x direction" << std::endl;
-					continue;
-				}
-
-				// 如果y方向顺序不对, 则拒绝
-				if (!(test_corners[0].y < min(test_corners[1].y, test_corners[2].y))
-					||
-					!(test_corners[3].y < min(test_corners[1].y, test_corners[2].y)))
-				{
-					res_log << "rejected because wrong relative position in y direction" << std::endl;
-					std::cout << "rejected because wrong relative position in y direction" << std::endl;
-					continue;
-				}
-				*/
-
-				// 裁剪并保存 (可选)
-				/*
-				vector<int> xs(4), ys(4);
-				for (int ci = 0; ci < test_corners.size(); ci++)
-				{
-					xs[ci] = test_corners[ci].x;
-					ys[ci] = test_corners[ci].y;
-				}
-				sort(xs.begin(), xs.end());
-				sort(ys.begin(), ys.end());
-
-				int start_r = min(max(ys[1], 0), ref_im_size.height);
-				int start_c = min(max(xs[1], 0), ref_im_size.width);
-				int end_r = max(min(ys[2], ref_im_size.height), 0);
-				int end_c = max(min(xs[2], ref_im_size.width), 0);
-
-				// 如果长宽比相反, 则拒绝
-				if ((abs(end_r - start_r) > abs(end_c - start_c) && (test_im_g.rows < test_im_g.cols))
-					||
-					(abs(end_r - start_r) < abs(end_c - start_c) && (test_im_g.rows > test_im_g.cols)))
-				{
-					res_log << "rejected because wrong aspect ratio" << std::endl;
-					std::cout << "rejected because wrong aspect ratio" << std::endl;
-					continue;
-				}
-
-				// 如果长或宽为0, 则拒绝
-				if (end_r - start_r == 0 || end_c - start_c == 0)
-				{
-					res_log << "rejected because zero size" << std::endl;
-					std::cout << "rejected because zero size" << std::endl;
-					continue;
-				}
-				*/
-
 			}
-
 		}
 
 		//  保存变换后的模板有效区域画在测试图像上的结果
 		fs::path trans_ref_valid_im_file = res_box_path /
 			(*test_iter + ".jpg");
 		imwrite(trans_ref_valid_im_file.string(), trans_ref_valid_im);
-
 		trans_ref_valid_txt.close();
 
 		waitKey();
