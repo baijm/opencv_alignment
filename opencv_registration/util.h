@@ -18,6 +18,7 @@
 using namespace cv;
 using namespace std;
 
+
 // 保存区域坐标
 struct RegionCoords {
 	int xmin, xmax, ymin, ymax;
@@ -28,15 +29,62 @@ struct RegionCoords {
 		:xmin(xmin_in), xmax(xmax_in), ymin(ymin_in), ymax(ymax_in) {}
 
 	// 返回左上角坐标
-	Point2f tl() {
+	Point2f tl() const {
 		return Point2f(xmin, ymin);
 	}
 
+	// 返回右上角坐标
+	Point2f tr() const {
+		return Point2f(xmax, ymin);
+	}
+
+	// 返回左下角坐标
+	Point2f bl() const {
+		return Point2f(xmin, ymax);
+	}
+
 	// 返回右下角坐标
-	Point2f br() {
+	Point2f br() const {
 		return Point2f(xmax, ymax);
 	}
+
+	// 返回宽
+	int width() const {
+		return xmax - xmin;
+	}
+
+	// 返回高
+	int height() const {
+		return ymax - ymin;
+	}
+
+	// 返回面积
+	int area() const {
+		return width() * height();
+	}
+
+	// 计算重叠
+	float overlap(const RegionCoords &r) const {
+		int r_xmin = r.xmin, r_ymin = r.ymin, r_width = r.width(), r_height = r.height();
+
+		int start_x = min(xmin, r_xmin), start_y = min(ymin, r_ymin);
+		int end_x = max(xmax, r_xmin + r_width), end_y = max(ymax, r_ymin + r_height);
+
+		int overlap_width = r_width + width() - (end_x - start_x);
+		int overlap_height = r_height + height() - (end_y - start_y);
+
+		if (overlap_width <= 0 || overlap_height <= 0)
+		{
+			return 0;
+		}
+		else
+		{
+			float overlap_area = overlap_width * overlap_height;
+			return overlap_area / (area() + r.area() - overlap_area);
+		}
+	}
 };
+
 
 // 保存matlab输出的word文件中每一行的内容
 struct MatchKpsSim
