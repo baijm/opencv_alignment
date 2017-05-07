@@ -1,38 +1,35 @@
 %YAML:1.0
 ---
-# 测试图像相关
-# -- 测试图像目录
-test_im_dir: "D:/datasets/vobile_project/shelf/shampoo/test/5_x_split_img_2852"
-# -- 测试图像名列表文件
-test_name_file: "D:/datasets/vobile_project/shelf/shampoo/test/16_recurrent_pattern_brand_result/rp_pr_all.txt"
-# -- 测试图像recurrent pattern粗分类结果文件
-test_rp_file: "D:/datasets/vobile_project/shelf/shampoo/test/16_recurrent_pattern_brand_result/classification_2_labels.txt"
-# -- 测试图像recurrent pattern粗分类特征匹配结果目录
-test_rp_match_dir: "D:/datasets/vobile_project/shelf/shampoo/test/26_match_result-multi_obj/result-pr/match_list"
-# 模板图像相关
-# -- 模板图像目录
-tmpl_im_dir: "D:/datasets/vobile_project/shelf/shampoo/test/15_tmpl_new_center/full/padding_black"
-# -- 模板图像valid region目录
-tmpl_valid_dir: "D:/datasets/vobile_project/shelf/shampoo/test/15_tmpl_new_center/valid_region/coords"
-# -- 粗分类类名->模板图像名映射文件
-cls_name2tmpl_file: "D:/datasets/vobile_project/shelf/shampoo/test/15_tmpl_new_center/cls_name_2_tmpl.txt"
-# -- 粗分类label->粗分类类名映射文件
-cls_id2name_file: "D:/datasets/vobile_project/shelf/shampoo/test/16_recurrent_pattern_brand_result/label_2_name.txt"
-# 结果目录
-# -- 保存在图像上画出特征匹配的结果
-res_match_dir: "./0428/match"
-# --  保存未裁剪的测试图像对齐结果
-res_align_dir: "./0428/align"
-# -- 保存裁剪后的测试图像对齐结果
-res_crop_dir: "./0428/crop"
-# -- 保存把模板图像有效区域变换到测试图像产生的包围盒坐标
-res_box_dir: "./0428/box"
 # 保存选项
 # -- 全部匹配和inlier画在图像上的结果
-save_match: 1
-# -- 在_corner.txt中保存左上, 左下, 右上, 右下点的坐标
-save_align: 1
-# -- 在_test_crop.jpg中保存裁剪后的测试图像
-save_crop: 1
+save_match: 0
+# -- 保存未裁剪的结果
+save_align: 0
+# -- 保存裁剪后的测试图像
+save_crop: 0
 # -- 保存把模板图像变换到测试图像产生的候选包围盒
-save_box: 1
+# ---- 每幅测试图像一个txt文件,其中每一行是一个包围盒的xmin, xmax, ymin, ymax; 一个jpg文件,画出所有包围盒
+# save_box: 1
+# 结果目录
+# -- 保存在图像上画出特征匹配的结果
+#res_match_dir: "./0506/match"
+# --  保存未裁剪的测试图像对齐结果
+#res_align_dir: "./0506/align"
+# -- 保存裁剪后的测试图像对齐结果
+#res_crop_dir: "./0506/crop"
+# -- 保存把模板图像有效区域变换到测试图像产生的包围盒坐标
+res_box_dir: "./0506/box_no_reject"
+# 测试图像相关
+# -- 测试图像目录
+test_im_dir: "D:/datasets/vobile_project/shelf/milk/test/layer/img"
+# -- 测试图像名列表文件
+test_name_file: "D:/datasets/vobile_project/shelf/milk/test/layer/img_names.txt"
+# -- 测试图像recurrent pattern粗分类特征匹配结果目录
+test_rp_match_dir: "D:/datasets/vobile_project/shelf/milk/test/layer/match_list"
+# 模板图像相关
+# -- 模板图像目录
+tmpl_im_dir: "D:/datasets/vobile_project/shelf/milk/test/template/img"
+# -- 模板图像名列表文件
+tmpl_name_file: "D:/datasets/vobile_project/shelf/milk/test/template/img_names.txt"
+# -- 模板图像valid region目录
+tmpl_valid_dir: "D:/datasets/vobile_project/shelf/milk/test/template/valid_region_coords"

@@ -58,6 +58,11 @@ struct RegionCoords {
 		return ymax - ymin;
 	}
 
+	// 返回高于宽的比值
+	float h2w() const {
+		return 1.0 * height() / width();
+	}
+
 	// 返回面积
 	int area() const {
 		return width() * height();
