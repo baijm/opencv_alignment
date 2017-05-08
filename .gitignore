@@ -1,7 +1,16 @@
-*.sdf
-*.opensdf
-*.db
-*.opendb
-Debug/
-opencv_registration/result/
+# for linux version
+*.cpp~
+*.h~
+.gitignore~
+
+# input and output file
+*.yml~
 *.txt
+*.txt~
+
+CMakeCache.txt
+CMakeFiles/
+Makefile
+bin/
+cmake_install.cmake
+result/

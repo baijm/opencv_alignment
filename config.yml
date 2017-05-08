@@ -4,7 +4,7 @@
 # -- 全部匹配和inlier画在图像上的结果
 save_match: 1
 # -- 保存未裁剪的结果
-save_align: 0
+save_align: 1
 # -- 保存裁剪后的测试图像
 save_crop: 1
 # -- 保存把模板图像变换到测试图像产生的候选包围盒
@@ -12,24 +12,24 @@ save_crop: 1
 # save_box: 1
 # 结果目录
 # -- 保存在图像上画出特征匹配的结果
-res_match_dir: "./shampoo/match"
+res_match_dir: "./result/match"
 # --  保存未裁剪的测试图像对齐结果
-#res_align_dir: "./shampoo/align"
+res_align_dir: "./result/align"
 # -- 保存裁剪后的测试图像对齐结果
-res_crop_dir: "./shampoo/crop"
+res_crop_dir: "./result/crop"
 # -- 保存把模板图像有效区域变换到测试图像产生的包围盒坐标
-res_box_dir: "./shampoo/box"
+res_box_dir: "./result/box"
 # 测试图像相关
 # -- 测试图像目录
-test_im_dir: "D:/datasets/vobile_project/shelf/shampoo/test/layer/img"
+test_im_dir: "/media/bjm/Data/datasets/vobile_project/shelf/milk/test/layer/img"
 # -- 测试图像名列表文件
-test_name_file: "D:/datasets/vobile_project/shelf/shampoo/test/layer/img_names.txt"
+test_name_file: "/media/bjm/Data/datasets/vobile_project/shelf/milk/test/layer/img_names.txt"
 # -- 测试图像recurrent pattern粗分类特征匹配结果目录
-test_rp_match_dir: "D:/datasets/vobile_project/shelf/shampoo/test/layer/match_list_and_templet/match_list"
+test_rp_match_dir: "/media/bjm/Data/datasets/vobile_project/shelf/milk/test/layer/match_list"
 # 模板图像相关
 # -- 模板图像目录
-tmpl_im_dir: "D:/datasets/vobile_project/shelf/shampoo/test/layer/match_list_and_templet/templet/mid_view"
+tmpl_im_dir: "/media/bjm/Data/datasets/vobile_project/shelf/milk/test/template/img"
 # -- 模板图像名列表文件
-tmpl_name_file: "D:/datasets/vobile_project/shelf/shampoo/test/layer/match_list_and_templet/templet/img_names.txt"
+tmpl_name_file: "/media/bjm/Data/datasets/vobile_project/shelf/milk/test/template/img_names.txt"
 # -- 模板图像valid region目录
-tmpl_valid_dir: "D:/datasets/vobile_project/shelf/shampoo/test/layer/match_list_and_templet/templet/valid_region_coords"
+tmpl_valid_dir: "/media/bjm/Data/datasets/vobile_project/shelf/milk/test/template/valid_region_coords"
