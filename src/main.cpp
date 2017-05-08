@@ -17,12 +17,18 @@ namespace fs = boost::filesystem;
 using namespace std;
 using namespace cv;
 
-int main()
+int main(int argc, char* argv[])
 {
+	if (argc != 2)
+	{
+		cout << "invalid argument number" << endl;
+		return -1;
+	}
+
 	/*****************************************************************
 	* 读配置文件
 	******************************************************************/
-	string config_file = "config.yml";
+	string config_file = argv[1];
 	FileStorage conf_fs(config_file, FileStorage::READ);
 	if (!conf_fs.isOpened())
 	{
@@ -98,14 +104,14 @@ int main()
 	fs::path test_im_path(test_im_dir);
 	if (!fs::exists(test_im_path))
 	{
-		std::cout << "test_im_dir " << test_im_dir << " not exist" << std::endl;
+		cout << "test_im_dir " << test_im_dir << " not exist" << endl;
 		return -1;
 	}
 	
 	fs::path tmpl_im_path(tmpl_im_dir);
 	if (!fs::exists(tmpl_im_path))
 	{
-		std::cout << "tmpl_im_dir " << tmpl_im_dir << " not exist" << std::endl;
+		cout << "tmpl_im_dir " << tmpl_im_dir << " not exist" << endl;
 		return -1;
 	}
 	
@@ -113,7 +119,7 @@ int main()
 	fs::path test_rp_match_path(test_rp_match_dir);
 	if (!fs::exists(test_rp_match_path))
 	{
-		std::cout << "test_rp_match_dir " << test_rp_match_dir << " not exist" << std::endl;
+		cout << "test_rp_match_dir " << test_rp_match_dir << " not exist" << endl;
 		return -1;
 	}
 
@@ -121,7 +127,7 @@ int main()
 	fs::path tmpl_valid_path(tmpl_valid_dir);
 	if (!fs::exists(tmpl_valid_path))
 	{
-		std::cout << "tmpl_valid_dir " << tmpl_valid_dir << " not exist" << std::endl;
+		cout << "tmpl_valid_dir " << tmpl_valid_dir << " not exist" << endl;
 		return -1;
 	}
 
@@ -130,7 +136,7 @@ int main()
 	fs::path test_name_path(test_name_file);
 	if (!fs::exists(test_name_path) || !fs::is_regular_file(test_name_path))
 	{
-		std::cout << "test_name_file not exist or is not regular file" << std::endl;
+		cout << "test_name_file not exist or is not regular file" << endl;
 		return -1;
 	}
 	else
@@ -148,7 +154,7 @@ int main()
 	fs::path tmpl_name_path(tmpl_name_file);
 	if (!fs::exists(tmpl_name_path) || !fs::is_regular_file(tmpl_name_path))
 	{
-		std::cout << "tmpl_name_file not exist or is not regular file" << std::endl;
+		cout << "tmpl_name_file not exist or is not regular file" << endl;
 		return -1;
 	}
 	else
@@ -166,25 +172,25 @@ int main()
 	if (save_match && !fs::exists(res_match_path))
 	{
 		fs::create_directories(res_match_path);
-		std::cout << "res_match_dir not exist, created" << std::endl;
+		cout << "res_match_dir not exist, created" << endl;
 	}
 	fs::path res_align_path(res_align_dir);
 	if (save_align && !fs::exists(res_align_path))
 	{
 		fs::create_directories(res_align_path);
-		std::cout << "res_align_path not exist, created" << std::endl;
+		cout << "res_align_path not exist, created" << endl;
 	}
 	fs::path res_crop_path(res_crop_dir);
 	if (save_crop && !fs::exists(res_crop_path))
 	{
 		fs::create_directories(res_crop_path);
-		std::cout << "res_crop_path not exist, created" << std::endl;
+		cout << "res_crop_path not exist, created" << endl;
 	}
 	fs::path res_box_path(res_box_dir);
 	if (!fs::exists(res_box_path))
 	{
 		fs::create_directories(res_box_path);
-		std::cout << "res_box_path not exist, created" << std::endl;
+		cout << "res_box_path not exist, created" << endl;
 	}
 
 	// log
@@ -206,11 +212,11 @@ int main()
 	// 对每幅测试图像
 	for (vector<string>::const_iterator test_iter = test_names.begin(); test_iter != test_names.end(); test_iter++)
 	{
-		std::cout << "test_img " << *test_iter << " : "  << std::endl;
-		res_log << "test_img " << *test_iter << " : " << std::endl;
+		cout << "test_img " << *test_iter << " : "  << endl;
+		res_log << "test_img " << *test_iter << " : " << endl;
 
 		// 读图像
-		Mat test_im_c = imread(test_im_dir + '/' + *test_iter + ".jpg");
+		Mat test_im_c = imread(test_im_dir + '/' + *test_iter + ".jpg", IMREAD_COLOR);
 		Mat test_im_g;
 		cvtColor(test_im_c, test_im_g, CV_BGR2GRAY);
 
@@ -228,16 +234,15 @@ int main()
 		// 与所有模板图像对齐
 		for (vector<string>::const_iterator tmpl_iter = tmpl_names.begin(); tmpl_iter != tmpl_names.end(); tmpl_iter++)
 		{
-			std::cout << "\t\t template image : " << *tmpl_iter << " ";
+			cout << "\t\t template image : " << *tmpl_iter << " ";
 			res_log << "\t\t template image : " << *tmpl_iter << " ";
 
 			// 读图像
 			Mat ref_im_c, ref_im_g;
 			if (ref_name2imc.find(*tmpl_iter) == ref_name2imc.end())
 			{
-				ref_im_c = imread(tmpl_im_dir + '/' + *tmpl_iter + ".jpg");
+				ref_im_c = imread(tmpl_im_dir + '/' + *tmpl_iter + ".jpg", IMREAD_COLOR);
 				cvtColor(ref_im_c, ref_im_g, CV_BGR2GRAY);
-
 				ref_name2imc[*tmpl_iter] = ref_im_c;
 				ref_name2img[*tmpl_iter] = ref_im_g;
 			}
@@ -270,12 +275,12 @@ int main()
 				"/" + "validID_" + *tmpl_iter + ".txt");
 			if (!valid_txt)
 			{
-				std::cout << test_rp_match_dir +
+				cout << test_rp_match_dir +
 					"/" + *test_iter +
-					"/" + "validID_" + *tmpl_iter + ".txt" << " not exist" << std::endl;
+					"/" + "validID_" + *tmpl_iter + ".txt" << " not exist" << endl;
 				res_log << test_rp_match_dir +
 					"/" + *test_iter +
-					"/" + "validID_" + *tmpl_iter + ".txt" << " not exist" << std::endl;
+					"/" + "validID_" + *tmpl_iter + ".txt" << " not exist" << endl;
 
 				return -1;
 			}
@@ -292,17 +297,17 @@ int main()
 			// -- 如果只有一行0, 则测试图像与该模板图像无匹配, 继续检查下一幅模板图像
 			if (valid_ids.size() == 1 && valid_ids[0] == 0)
 			{
-				std::cout << "no match result" << std::endl;
-				res_log << "no match result" << std::endl;
+				cout << "no match result" << endl;
+				res_log << "no match result" << endl;
 				continue;
 			}
 
 			// -- 否则, 列表中有非0数字k, 则再读模板图像名_k.txt
-			std::cout << valid_ids.size() << " match results" << std::endl;
-			res_log << valid_ids.size() << " match results" << std::endl;
+			cout << valid_ids.size() << " match results" << endl;
+			res_log << valid_ids.size() << " match results" << endl;
 			for (vector<int>::iterator valid_iter = valid_ids.begin(); valid_iter != valid_ids.end(); valid_iter++)
 			{
-				std::cout << "\t\t\t validID " << *valid_iter << " : ";
+				cout << "\t\t\t validID " << *valid_iter << " : ";
 				res_log << "\t\t\t validID " << *valid_iter << " : ";
 
 				// 读模板图像名_k.txt
@@ -315,12 +320,12 @@ int main()
 				Mat A_mat;
 				if (!estimator->estimate_affine_matrix(test_pts, ref_pts, A_mat))
 				{
-					std::cout << "failed to estimate affine matrix" << std::endl;
-					res_log << "failed to estimate affine matrix" << std::endl;
+					cout << "failed to estimate affine matrix" << endl;
+					res_log << "failed to estimate affine matrix" << endl;
 					continue;
 				}
-				std::cout << "estimating affine matrix succeed" << std::endl;
-				res_log << "estimating affine matrix succeed" << std::endl;
+				cout << "estimating affine matrix succeed" << endl;
+				res_log << "estimating affine matrix succeed" << endl;
 				Point2f test_center = estimator->test_center;
 				Point2f ref_center = estimator->ref_center;
 
@@ -484,7 +489,7 @@ int main()
 					<< this_trans_valid.xmin << " "
 					<< this_trans_valid.xmax << " "
 					<< this_trans_valid.ymin << " "
-					<< this_trans_valid.ymax << std::endl;
+					<< this_trans_valid.ymax << endl;
 			}
 		}
 		

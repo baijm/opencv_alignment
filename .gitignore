@@ -1,3 +1,19 @@
 *.sdf
 *.opensdf
 Debug/
+*.cpp~
+*.h~
+.gitignore~
+
+# input and output file
+*.yml~
+*.txt
+*.txt~
+
+# for linux version
+CMakeCache.txt
+CMakeFiles/
+Makefile
+bin/
+cmake_install.cmake
+result/
