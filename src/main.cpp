@@ -1,1026 +1,534 @@
 #include <opencv2/highgui/highgui.hpp>
-
 #include <opencv2/calib3d/calib3d.hpp>
-
 #include <opencv2/imgproc/imgproc.hpp>
 
-
-
 #include <boost/filesystem.hpp>
-
 #include <boost/date_time/gregorian/gregorian.hpp>    
-
 #include <boost/date_time/posix_time/posix_time.hpp>
 
-
-
 #include <iostream>
-
 #include <fstream>
-
 #include <unordered_map>
 
-
-
 #include "my_detector.h"
-
 #include "util.h"
 
-
-
 namespace fs = boost::filesystem;
-
 using namespace std;
-
 using namespace cv;
 
-
-
 int main()
-
 {
-
 	/*****************************************************************
-
-	* ¶ÁÅäÖÃÎÄ¼ş
-
+	* è¯»é…ç½®æ–‡ä»¶
 	******************************************************************/
-
 	string config_file = "config.yml";
-
 	FileStorage conf_fs(config_file, FileStorage::READ);
-
 	if (!conf_fs.isOpened())
-
 	{
-
 		cout << "failed to open file config.yml" << endl;
-
 		return -1;
-
 	}
 
-
-
-	// ------------------ ±£´æÑ¡Ïî -----------------------------------
-
-	// È«²¿Æ¥ÅäºÍinlier»­ÔÚÍ¼ÏñÉÏµÄ½á¹û
-
+	// ------------------ ä¿å­˜é€‰é¡¹ -----------------------------------
+	// å…¨éƒ¨åŒ¹é…å’Œinlierç”»åœ¨å›¾åƒä¸Šçš„ç»“æœ
 	bool save_match;
-
 	conf_fs["save_match"] >> save_match;
 
-	// ±£´æÎ´²Ã¼ôµÄ½á¹û
-
+	// ä¿å­˜æœªè£å‰ªçš„ç»“æœ
 	bool save_align;
-
 	conf_fs["save_align"] >> save_align;
 
-	// ±£´æ²Ã¼ôºóµÄ²âÊÔÍ¼Ïñ
-
+	// ä¿å­˜è£å‰ªåçš„æµ‹è¯•å›¾åƒ
 	bool save_crop;
-
 	conf_fs["save_crop"] >> save_crop;
 
-
-
-	// -------------- ²âÊÔÍ¼ÏñÏà¹Ø -----------------------------------
-
-	// ²âÊÔÍ¼ÏñÄ¿Â¼
-
+	// -------------- æµ‹è¯•å›¾åƒç›¸å…³ -----------------------------------
+	// æµ‹è¯•å›¾åƒç›®å½•
 	string test_im_dir;
-
 	conf_fs["test_im_dir"] >> test_im_dir;
 
-	// ²âÊÔÍ¼ÏñÃûÁĞ±íÎÄ¼ş
-
+	// æµ‹è¯•å›¾åƒååˆ—è¡¨æ–‡ä»¶
 	string test_name_file;
-
 	conf_fs["test_name_file"] >> test_name_file;
 
-	// ²âÊÔÍ¼Ïñrecurrent pattern´Ö·ÖÀàÌØÕ÷Æ¥Åä½á¹ûÄ¿Â¼
-
+	// æµ‹è¯•å›¾åƒrecurrent patternç²—åˆ†ç±»ç‰¹å¾åŒ¹é…ç»“æœç›®å½•
 	string test_rp_match_dir;
-
 	conf_fs["test_rp_match_dir"] >> test_rp_match_dir;
 
-
-
-	// -------------- Ä£°åÍ¼ÏñÏà¹Ø -----------------------------------
-
-	// Ä£°åÍ¼ÏñÄ¿Â¼
-
+	// -------------- æ¨¡æ¿å›¾åƒç›¸å…³ -----------------------------------
+	// æ¨¡æ¿å›¾åƒç›®å½•
 	string tmpl_im_dir;
-
 	conf_fs["tmpl_im_dir"] >> tmpl_im_dir;
 
-	// Ä£°åÍ¼ÏñÃûÁĞ±íÎÄ¼ş
-
+	// æ¨¡æ¿å›¾åƒååˆ—è¡¨æ–‡ä»¶
 	string tmpl_name_file;
-
 	conf_fs["tmpl_name_file"] >> tmpl_name_file;
 
-	// Ä£°åÍ¼Ïñvalid regionÄ¿Â¼
-
+	// æ¨¡æ¿å›¾åƒvalid regionç›®å½•
 	string tmpl_valid_dir;
-
 	conf_fs["tmpl_valid_dir"] >> tmpl_valid_dir;
 
-
-
-	// ------------------- ½á¹ûÄ¿Â¼ ----------------------------------
-
-	// ±£´æÔÚÍ¼ÏñÉÏ»­³öÌØÕ÷Æ¥ÅäµÄ½á¹û
-
+	// ------------------- ç»“æœç›®å½• ----------------------------------
+	// ä¿å­˜åœ¨å›¾åƒä¸Šç”»å‡ºç‰¹å¾åŒ¹é…çš„ç»“æœ
 	string res_match_dir;
-
 	if (save_match)
-
 	{
-
 		conf_fs["res_match_dir"] >> res_match_dir;
-
 	}
 
-	// ±£´æÎ´²Ã¼ôµÄ²âÊÔÍ¼Ïñ¶ÔÆë½á¹û
-
+	// ä¿å­˜æœªè£å‰ªçš„æµ‹è¯•å›¾åƒå¯¹é½ç»“æœ
 	string res_align_dir;
-
 	if (save_align)
-
 	{
-
 		conf_fs["res_align_dir"] >> res_align_dir;
-
 	}
 
-	// ±£´æ²Ã¼ôºóµÄ²âÊÔÍ¼Ïñ¶ÔÆë½á¹û
-
+	// ä¿å­˜è£å‰ªåçš„æµ‹è¯•å›¾åƒå¯¹é½ç»“æœ
 	string res_crop_dir;
-
 	if (save_crop)
-
 	{
-
 		conf_fs["res_crop_dir"] >> res_crop_dir;
-
 	}
 
-	// ±£´æ°ÑÄ£°åÍ¼ÏñÓĞĞ§ÇøÓò±ä»»µ½²âÊÔÍ¼Ïñ²úÉúµÄ°üÎ§ºĞ×ø±ê
-
+	// ä¿å­˜æŠŠæ¨¡æ¿å›¾åƒæœ‰æ•ˆåŒºåŸŸå˜æ¢åˆ°æµ‹è¯•å›¾åƒäº§ç”Ÿçš„åŒ…å›´ç›’åæ ‡
 	string res_box_dir;
-
 	conf_fs["res_box_dir"] >> res_box_dir;
-
-	
 
 	conf_fs.release();
 
-
-
 	/*******************************************************************
-
-	*	³õÊ¼»¯
-
+	*	åˆå§‹åŒ–
 	********************************************************************/
-
-	// Çó½â·ÂÉä¾ØÕóµÄ·½·¨
-
+	// æ±‚è§£ä»¿å°„çŸ©é˜µçš„æ–¹æ³•
 	MyAffineEstimator *estimator = new RansacAffineEstimator();
 
-
-
-	// ¼ì²éÍ¼ÏñÄ¿Â¼
-
+	// æ£€æŸ¥å›¾åƒç›®å½•
 	fs::path test_im_path(test_im_dir);
-
 	if (!fs::exists(test_im_path))
-
 	{
-
 		std::cout << "test_im_dir " << test_im_dir << " not exist" << std::endl;
-
 		return -1;
-
 	}
-
-	
 
 	fs::path tmpl_im_path(tmpl_im_dir);
-
 	if (!fs::exists(tmpl_im_path))
-
 	{
-
 		std::cout << "tmpl_im_dir " << tmpl_im_dir << " not exist" << std::endl;
-
 		return -1;
-
 	}
 
-	
-
-	// ¼ì²éRPÆ¥ÅäÄ¿Â¼
-
+	// æ£€æŸ¥RPåŒ¹é…ç›®å½•
 	fs::path test_rp_match_path(test_rp_match_dir);
-
 	if (!fs::exists(test_rp_match_path))
-
 	{
-
 		std::cout << "test_rp_match_dir " << test_rp_match_dir << " not exist" << std::endl;
-
 		return -1;
-
 	}
 
-
-
-	// ¼ì²éÄ£°åÍ¼Ïñvalid regionÄ¿Â¼
-
+	// æ£€æŸ¥æ¨¡æ¿å›¾åƒvalid regionç›®å½•
 	fs::path tmpl_valid_path(tmpl_valid_dir);
-
 	if (!fs::exists(tmpl_valid_path))
-
 	{
-
 		std::cout << "tmpl_valid_dir " << tmpl_valid_dir << " not exist" << std::endl;
-
 		return -1;
-
 	}
 
-
-
-	// ¶Á²âÊÔÍ¼ÏñÃûÁĞ±í
-
+	// è¯»æµ‹è¯•å›¾åƒååˆ—è¡¨
 	vector<string> test_names;
-
 	fs::path test_name_path(test_name_file);
-
 	if (!fs::exists(test_name_path) || !fs::is_regular_file(test_name_path))
-
 	{
-
 		std::cout << "test_name_file not exist or is not regular file" << std::endl;
-
 		return -1;
-
 	}
-
 	else
-
 	{
-
 		ifstream txt(test_name_file);
-
 		string line;
-
 		while (getline(txt, line))
-
 		{
-
 			test_names.push_back(line);
-
 		}
-
 	}
 
-
-
-	// ¶ÁÄ£°åÍ¼ÏñÃûÁĞ±í
-
+	// è¯»æ¨¡æ¿å›¾åƒååˆ—è¡¨
 	vector<string> tmpl_names;
-
 	fs::path tmpl_name_path(tmpl_name_file);
-
 	if (!fs::exists(tmpl_name_path) || !fs::is_regular_file(tmpl_name_path))
-
 	{
-
 		std::cout << "tmpl_name_file not exist or is not regular file" << std::endl;
-
 		return -1;
-
 	}
-
 	else
-
 	{
-
 		ifstream txt(tmpl_name_file);
-
 		string line;
-
 		while (getline(txt, line))
-
 		{
-
 			tmpl_names.push_back(line);
-
 		}
-
 	}
 
-
-
-	// ¼ì²é½á¹ûÄ¿Â¼
-
+	// æ£€æŸ¥ç»“æœç›®å½•
 	fs::path res_match_path(res_match_dir);
-
 	if (save_match && !fs::exists(res_match_path))
-
 	{
-
 		fs::create_directories(res_match_path);
-
 		std::cout << "res_match_dir not exist, created" << std::endl;
-
 	}
 
 	fs::path res_align_path(res_align_dir);
-
 	if (save_align && !fs::exists(res_align_path))
-
 	{
-
 		fs::create_directories(res_align_path);
-
 		std::cout << "res_align_path not exist, created" << std::endl;
-
 	}
 
 	fs::path res_crop_path(res_crop_dir);
-
 	if (save_crop && !fs::exists(res_crop_path))
-
 	{
-
 		fs::create_directories(res_crop_path);
-
 		std::cout << "res_crop_path not exist, created" << std::endl;
 
 	}
 
 	fs::path res_box_path(res_box_dir);
-
 	if (!fs::exists(res_box_path))
-
 	{
-
 		fs::create_directories(res_box_path);
-
 		std::cout << "res_box_path not exist, created" << std::endl;
-
 	}
 
-
-
 	// log
-
 	string now_str = boost::posix_time::to_iso_string(boost::posix_time::second_clock::local_time());
-
 	ofstream res_log("log_" + now_str + ".txt");
 
-
-
-	// Ä£°åÍ¼ÏñÃû->²ÊÉ«Í¼ÏñÓ³Éä
-
+	// æ¨¡æ¿å›¾åƒå->å½©è‰²å›¾åƒæ˜ å°„
 	unordered_map<string, Mat> ref_name2imc;
 
-
-
-	// Ä£°åÍ¼ÏñÃû->»Ò¶ÈÍ¼ÏñÓ³Éä
-
+	// æ¨¡æ¿å›¾åƒå->ç°åº¦å›¾åƒæ˜ å°„
 	unordered_map<string, Mat> ref_name2img;
 
-	
-
-	// Ä£°åÍ¼ÏñÃû->valid region×ø±êÓ³Éä
-
+	// æ¨¡æ¿å›¾åƒå->valid regionåæ ‡æ˜ å°„
 	unordered_map<string, RegionCoords> ref_name2valid;
 
-
-
 	/************************************************************************/
-
-	/* ¶ÔÆë                                                                     */
-
+	/* å¯¹é½                                                                     */
 	/************************************************************************/
-
-	// ¶ÔÃ¿·ù²âÊÔÍ¼Ïñ
-
+	// å¯¹æ¯å¹…æµ‹è¯•å›¾åƒ
 	for (vector<string>::const_iterator test_iter = test_names.begin(); test_iter != test_names.end(); test_iter++)
-
 	{
-
 		std::cout << "test_img " << *test_iter << " : "  << std::endl;
-
 		res_log << "test_img " << *test_iter << " : " << std::endl;
 
-
-
-		// ¶ÁÍ¼Ïñ
-
+		// è¯»å›¾åƒ
 		Mat test_im_c = imread(test_im_dir + '/' + *test_iter + ".jpg");
-
 		Mat test_im_g;
-
 		cvtColor(test_im_c, test_im_g, CV_BGR2GRAY);
 
-
-
-		// Í¼Ïñ³ß´ç
-
+		// å›¾åƒå°ºå¯¸
 		Size test_im_size = test_im_c.size();
 
-
-
-		// ±ä»»ºóµÄÄ£°åÍ¼ÏñÓĞĞ§ÇøÓò
-
+		// å˜æ¢åçš„æ¨¡æ¿å›¾åƒæœ‰æ•ˆåŒºåŸŸ
 		vector<RegionCoords> trans_valid_regions;
 
-		// - »­ÔÚÍ¼ÏñÉÏ
-
+		// - ç”»åœ¨å›¾åƒä¸Š
 		Mat trans_tmpl_valid_im = test_im_c.clone();
 
-
-
-		// ÓëËùÓĞÄ£°åÍ¼Ïñ¶ÔÆë
-
+		// ä¸æ‰€æœ‰æ¨¡æ¿å›¾åƒå¯¹é½
 		for (vector<string>::const_iterator tmpl_iter = tmpl_names.begin(); tmpl_iter != tmpl_names.end(); tmpl_iter++)
-
 		{
-
 			std::cout << "\t\t template image : " << *tmpl_iter << " ";
-
 			res_log << "\t\t template image : " << *tmpl_iter << " ";
 
-
-
-			// ¶ÁÍ¼Ïñ
-
+			// è¯»å›¾åƒ
 			Mat ref_im_c, ref_im_g;
-
 			if (ref_name2imc.find(*tmpl_iter) == ref_name2imc.end())
-
 			{
-
 				ref_im_c = imread(tmpl_im_dir + '/' + *tmpl_iter + ".jpg");
-
 				cvtColor(ref_im_c, ref_im_g, CV_BGR2GRAY);
 
-
-
 				ref_name2imc[*tmpl_iter] = ref_im_c;
-
 				ref_name2img[*tmpl_iter] = ref_im_g;
-
 			}
-
 			else
-
 			{
-
 				ref_im_c = ref_name2imc[*tmpl_iter];
-
 				ref_im_g = ref_name2img[*tmpl_iter];
-
 			}
 
-
-
-			// Í¼Ïñ³ß´ç
-
+			// å›¾åƒå°ºå¯¸
 			Size ref_im_size = ref_im_c.size();
 
-
-
-			// ¶Ávalid region×ø±ê
-
+			// è¯»valid regionåæ ‡
 			RegionCoords ref_valid;
-
 			if (ref_name2valid.find(*tmpl_iter) == ref_name2valid.end())
-
 			{
-
 				ref_valid = load_region_txt(tmpl_valid_dir + "/" + *tmpl_iter + ".txt");
-
 				ref_name2valid[*tmpl_iter] = ref_valid;
-
 			}
-
 			else
-
 			{
-
 				ref_valid = ref_name2valid[*tmpl_iter];
-
 			}
 
-
-
-			// ¶Árecurrent patternÆ¥Åä½á¹û
-
-			// - ÏÈ¶ÁvalidID_Ä£°åÍ¼ÏñÃû.txt
-
+			// è¯»recurrent patternåŒ¹é…ç»“æœ
+			// - å…ˆè¯»validID_æ¨¡æ¿å›¾åƒå.txt
 			vector<int> valid_ids;
-
 			ifstream valid_txt(test_rp_match_dir +
-
 				"/" + *test_iter +
-
 				"/" + "validID_" + *tmpl_iter + ".txt");
-
 			if (!valid_txt)
-
 			{
-
 				std::cout << test_rp_match_dir +
-
 					"/" + *test_iter +
-
 					"/" + "validID_" + *tmpl_iter + ".txt" << " not exist" << std::endl;
-
 				res_log << test_rp_match_dir +
-
 					"/" + *test_iter +
-
 					"/" + "validID_" + *tmpl_iter + ".txt" << " not exist" << std::endl;
-
-
 
 				return -1;
-
 			}
-
 			else
-
 			{
-
 				string line;
-
 				while (getline(valid_txt, line))
-
 				{
-
 					valid_ids.push_back(atoi(line.c_str()));
-
 				}
-
 				valid_txt.close();
-
 			}
 
-
-
-			// -- Èç¹ûÖ»ÓĞÒ»ĞĞ0, Ôò²âÊÔÍ¼ÏñÓë¸ÃÄ£°åÍ¼ÏñÎŞÆ¥Åä, ¼ÌĞø¼ì²éÏÂÒ»·ùÄ£°åÍ¼Ïñ
-
+			// -- å¦‚æœåªæœ‰ä¸€è¡Œ0, åˆ™æµ‹è¯•å›¾åƒä¸è¯¥æ¨¡æ¿å›¾åƒæ— åŒ¹é…, ç»§ç»­æ£€æŸ¥ä¸‹ä¸€å¹…æ¨¡æ¿å›¾åƒ
 			if (valid_ids.size() == 1 && valid_ids[0] == 0)
-
 			{
-
 				std::cout << "no match result" << std::endl;
-
 				res_log << "no match result" << std::endl;
-
 				continue;
-
 			}
 
-
-
-			// -- ·ñÔò, ÁĞ±íÖĞÓĞ·Ç0Êı×Ök, ÔòÔÙ¶ÁÄ£°åÍ¼ÏñÃû_k.txt
-
+			// -- å¦åˆ™, åˆ—è¡¨ä¸­æœ‰é0æ•°å­—k, åˆ™å†è¯»æ¨¡æ¿å›¾åƒå_k.txt
 			std::cout << valid_ids.size() << " match results" << std::endl;
-
 			res_log << valid_ids.size() << " match results" << std::endl;
-
 			for (vector<int>::iterator valid_iter = valid_ids.begin(); valid_iter != valid_ids.end(); valid_iter++)
-
 			{
-
 				std::cout << "\t\t\t validID " << *valid_iter << " : ";
-
 				res_log << "\t\t\t validID " << *valid_iter << " : ";
 
-
-
-				// ¶ÁÄ£°åÍ¼ÏñÃû_k.txt
-
+				// è¯»æ¨¡æ¿å›¾åƒå_k.txt
 				vector<Point2f> test_pts, ref_pts;
-
 				load_match_pts_txt(test_rp_match_dir +
-
 					"/" + *test_iter +
-
 					"/" + *tmpl_iter + "_" + to_string(*valid_iter) + ".txt", test_pts, ref_pts);
 
-
-
-				// Çó·ÂÉä¾ØÕó
-
+				// æ±‚ä»¿å°„çŸ©é˜µ
 				Mat A_mat;
-
 				if (!estimator->estimate_affine_matrix(test_pts, ref_pts, A_mat))
-
 				{
-
 					std::cout << "failed to estimate affine matrix" << std::endl;
-
 					res_log << "failed to estimate affine matrix" << std::endl;
-
 					continue;
-
 				}
-
 				std::cout << "estimating affine matrix succeed" << std::endl;
-
 				res_log << "estimating affine matrix succeed" << std::endl;
 
 				Point2f test_center = estimator->test_center;
-
 				Point2f ref_center = estimator->ref_center;
 
-
-
-				// »­³öÈ«²¿ÌØÕ÷µãÆ¥Åä¹ØÏµinliers²¢±£´æ (¿ÉÑ¡)
-
+				// ç”»å‡ºå…¨éƒ¨ç‰¹å¾ç‚¹åŒ¹é…å…³ç³»inlierså¹¶ä¿å­˜ (å¯é€‰)
 				if (save_match)
-
 				{
-
 					Mat match_all_im;
-
 					vector<KeyPoint> test_kps, ref_kps;
-
 					cv::KeyPoint::convert(test_pts, test_kps);
-
 					cv::KeyPoint::convert(ref_pts, ref_kps);
-
 					vector<DMatch> matches;
-
 					for (int pi = 0; pi < test_kps.size(); pi++)
-
 					{
-
 						matches.push_back(DMatch(pi, pi, 0));
-
 					}
 
-
-
 					drawMatches(test_im_c, test_kps,
-
 						ref_im_c, ref_kps,
-
 						matches, match_all_im);
-
 					fs::path match_all_im_file = res_match_path
-
 						/ (*test_iter + "_" + *tmpl_iter + "_" + to_string(*valid_iter) + "_all.jpg");
-
 					cv::imwrite(match_all_im_file.string(), match_all_im);
 
-
-
 					Mat match_inlier_im;
-
 					drawMatches(test_im_c, test_kps,
-
 						ref_im_c, ref_kps,
-
 						estimator->inliers, match_inlier_im);
-
 					fs::path match_inlier_im_file = res_match_path
-
 						/ (*test_iter + "_" + *tmpl_iter + "_" + to_string(*valid_iter) + "_inliers.jpg");
-
 					cv::imwrite(match_inlier_im_file.string(), match_inlier_im);
-
 				}
 
-
-
-				// ±ä»»²âÊÔÍ¼Ïñ
-
-				// - ±ä»»Ç°, ²âÊÔÍ¼ÏñÔ­µãÒÆ¶¯µ½ÖĞĞÄ
-
+				// å˜æ¢æµ‹è¯•å›¾åƒ
+				// - å˜æ¢å‰, æµ‹è¯•å›¾åƒåŸç‚¹ç§»åŠ¨åˆ°ä¸­å¿ƒ
 				Mat T_mat_pre = Mat::zeros(3, 3, CV_64F);
-
 				T_mat_pre.at<double>(0, 0) = T_mat_pre.at<double>(1, 1) = T_mat_pre.at<double>(2, 2) = 1;
-
 				T_mat_pre.at<double>(0, 2) = -test_center.x;
-
 				T_mat_pre.at<double>(1, 2) = -test_center.y;
 
-
-
-				// - ÓÅ»¯ºóµÄ·ÂÉä¾ØÕó
-
+				// - ä¼˜åŒ–åçš„ä»¿å°„çŸ©é˜µ
 				Mat A_mat_h = Mat::zeros(3, 3, A_mat.type());
-
 				A_mat_h.at<double>(0, 0) = A_mat.at<double>(0, 0);
-
 				A_mat_h.at<double>(0, 1) = A_mat.at<double>(0, 1);
-
 				A_mat_h.at<double>(0, 2) = A_mat.at<double>(0, 2);
-
 				A_mat_h.at<double>(1, 0) = A_mat.at<double>(1, 0);
-
 				A_mat_h.at<double>(1, 1) = A_mat.at<double>(1, 1);
-
 				A_mat_h.at<double>(1, 2) = A_mat.at<double>(1, 2);
-
 				A_mat_h.at<double>(2, 2) = 1;
 
-
-
-				// - ±ä»»ºó, ²âÊÔÍ¼ÏñÔ­µãÒÆ¶¯µ½Ä£°åÍ¼ÏñÖĞĞÄ
-
+				// - å˜æ¢å, æµ‹è¯•å›¾åƒåŸç‚¹ç§»åŠ¨åˆ°æ¨¡æ¿å›¾åƒä¸­å¿ƒ
 				Mat T_mat_post = Mat::zeros(3, 3, CV_64F);
-
 				T_mat_post.at<double>(0, 0) = T_mat_post.at<double>(1, 1) = T_mat_post.at<double>(2, 2) = 1;
-
 				T_mat_post.at<double>(0, 2) = ref_center.x;
-
 				T_mat_post.at<double>(1, 2) = ref_center.y;
 
-
-
-				// ×éºÏ±ä»»¾ØÕó
-
+				// ç»„åˆå˜æ¢çŸ©é˜µ
 				Mat M_mat_h = T_mat_post * (A_mat_h * T_mat_pre);
-
 				Mat M_mat = M_mat_h(Range(0, 2), Range(0, 3));
 
-
-
-				// ·ÂÉä±ä»»
-
+				// ä»¿å°„å˜æ¢
 				Mat M_im;
-
 				warpAffine(test_im_c, M_im, M_mat, ref_im_size);
 
-
-
-				// ÇóÄ£°åÍ¼ÏñÓĞĞ§ÇøÓò±ä»»µ½²âÊÔÍ¼ÏñÉÏµÄ×ø±ê
-
-				// -- Ä£°åÍ¼ÏñÓĞĞ§ÇøÓòËÄ½Ç×ø±ê
-
+				// æ±‚æ¨¡æ¿å›¾åƒæœ‰æ•ˆåŒºåŸŸå˜æ¢åˆ°æµ‹è¯•å›¾åƒä¸Šçš„åæ ‡
+				// -- æ¨¡æ¿å›¾åƒæœ‰æ•ˆåŒºåŸŸå››è§’åæ ‡
 				vector<Point2f> ref_corners(4);
+				ref_corners[0] = ref_valid.tl(); // å·¦ä¸Š
+				ref_corners[1] = ref_valid.bl(); // å·¦ä¸‹
+				ref_corners[2] = ref_valid.tr(); // å³ä¸Š
+				ref_corners[3] = ref_valid.br(); // å³ä¸‹
 
-				ref_corners[0] = ref_valid.tl(); // ×óÉÏ
-
-				ref_corners[1] = ref_valid.bl(); // ×óÏÂ
-
-				ref_corners[2] = ref_valid.tr(); // ÓÒÉÏ
-
-				ref_corners[3] = ref_valid.br(); // ÓÒÏÂ
-
-				// -- Ä£°åÍ¼Ïñ±ä»»µ½²âÊÔÍ¼Ïñ²úÉúµÄºòÑ¡°üÎ§ºĞ
-
+				// -- æ¨¡æ¿å›¾åƒå˜æ¢åˆ°æµ‹è¯•å›¾åƒäº§ç”Ÿçš„å€™é€‰åŒ…å›´ç›’
 				Mat M_mat_inv_h = M_mat_h.inv();
-
 				Mat M_mat_inv = M_mat_inv_h(Range(0, 2), Range(0, 3));
-
 				transform(ref_corners, ref_corners, M_mat_inv);
 
-				// -- Çó°üÎ§ºĞ
-
+				// -- æ±‚åŒ…å›´ç›’
 				RegionCoords this_trans_valid(
-
 					min(min(min(ref_corners[0].x, ref_corners[1].x), ref_corners[2].x), ref_corners[3].x),
-
 					max(max(max(ref_corners[0].x, ref_corners[1].x), ref_corners[2].x), ref_corners[3].x),
-
 					min(min(min(ref_corners[0].y, ref_corners[1].y), ref_corners[2].y), ref_corners[3].y),
-
 					max(max(max(ref_corners[0].y, ref_corners[1].y), ref_corners[2].y), ref_corners[3].y)
-
 				);
 
 				this_trans_valid.xmin = max(this_trans_valid.xmin, 0);
-
 				this_trans_valid.ymin = max(this_trans_valid.ymin, 0);
-
 				this_trans_valid.xmax = min(this_trans_valid.xmax, test_im_size.width - 1);
-
 				this_trans_valid.ymax = min(this_trans_valid.ymax, test_im_size.height - 1);
 
-				// -- Èç¹û±ä»»µ½²âÊÔÍ¼ÏñµÄÓĞĞ§ÇøÓò¿í¸ß±ÈºÍÔ­±¾µÄÓĞĞ§ÇøÓòÏà·´, ÔòÌø¹ı
-
+				// -- å¦‚æœå˜æ¢åˆ°æµ‹è¯•å›¾åƒçš„æœ‰æ•ˆåŒºåŸŸå®½é«˜æ¯”å’ŒåŸæœ¬çš„æœ‰æ•ˆåŒºåŸŸç›¸å, åˆ™è·³è¿‡
 				if ((this_trans_valid.h2w() < 1 && ref_valid.h2w() > 1)
-
 					|| (this_trans_valid.h2w() > 1 && ref_valid.h2w() < 1))
-
 				{
-
 					continue;
-
 				}
 
-				// -- ¸ù¾İÓëµ±Ç°²âÊÔÍ¼ÏñÒÑÓĞµÄ±ä»»ºóÄ£°åÍ¼ÏñÓĞĞ§ÇøÓòµÄÖØµş±àºÅ
-
+				// -- æ ¹æ®ä¸å½“å‰æµ‹è¯•å›¾åƒå·²æœ‰çš„å˜æ¢åæ¨¡æ¿å›¾åƒæœ‰æ•ˆåŒºåŸŸçš„é‡å ç¼–å·
 				int ti;
-
 				for (ti = 0; ti < trans_valid_regions.size(); ti++)
-
 				{
-
-					// Èç¹ûÓëÒÑÓĞµÄÓĞĞ§ÇøÓòÖØµş´óÓÚ0.5, ÔòÓÃÔ­À´µÄ±àºÅ
-
+					// å¦‚æœä¸å·²æœ‰çš„æœ‰æ•ˆåŒºåŸŸé‡å å¤§äº0.5, åˆ™ç”¨åŸæ¥çš„ç¼–å·
 					if (trans_valid_regions[ti].overlap(this_trans_valid) > 0.5)
-
 					{
-
-						// ±£´æÎ´²Ã¼ô½á¹û
-
+						// ä¿å­˜æœªè£å‰ªç»“æœ
 						if (save_align)
-
 						{
-
 							fs::path align_im_file = res_align_path /
-
 								(*test_iter + "_" + to_string(ti) + "_" + *tmpl_iter + ".jpg");
-
 							cv::imwrite(align_im_file.string(), M_im);
-
 						}
 
-
-
-						// ±£´æ²Ã¼ô½á¹û
-
+						// ä¿å­˜è£å‰ªç»“æœ
 						if (save_crop)
-
 						{
-
 							int start_r = ref_valid.ymin;
-
 							int start_c = ref_valid.xmin;
-
 							int end_r = ref_valid.ymax;
-
 							int end_c = ref_valid.xmax;
 
-
-
 							Mat test_crop_im = M_im(Range(start_r, end_r), Range(start_c, end_c));
-
 							fs::path test_crop_file = res_crop_path /
-
 								(*test_iter + "_" + to_string(ti) + "_" + *tmpl_iter + ".jpg");
-
 							cv::imwrite(test_crop_file.string(), test_crop_im);
-
 						}
 
-
-
-						// ±£´æ×ø±ê
-
+						// ä¿å­˜åæ ‡
 						fs::path trans_tmpl_valid_file = res_box_path /
-
 							(*test_iter + "_" + to_string(ti) + "_" + *tmpl_iter + ".txt");
-
 						ofstream trans_tmpl_valid_txt(trans_tmpl_valid_file.string(), ios::out);
-
 						trans_tmpl_valid_txt
-
 							<< this_trans_valid.xmin << " "
-
 							<< this_trans_valid.xmax << " "
-
 							<< this_trans_valid.ymin << " "
-
 							<< this_trans_valid.ymax << std::endl;
-
 						trans_tmpl_valid_txt.close();
 
-
-
 						break;
-
 					}
-
 				}
 
-
-
-				// Èç¹ûÓëËùÓĞÒÑÓĞÓĞĞ§ÇøÓòÖØµş¶¼Ğ¡ÓÚ0.5, ÔòÌí¼ÓĞÂ±àºÅ
-
+				// å¦‚æœä¸æ‰€æœ‰å·²æœ‰æœ‰æ•ˆåŒºåŸŸé‡å éƒ½å°äº0.5, åˆ™æ·»åŠ æ–°ç¼–å·
 				if (ti == trans_valid_regions.size())
-
 				{
-
 					trans_valid_regions.push_back(this_trans_valid);
 
-
-
-					// ±£´æÎ´²Ã¼ô½á¹û
-
+					// ä¿å­˜æœªè£å‰ªç»“æœ
 					if (save_align)
-
 					{
-
 						fs::path align_im_file = res_align_path /
-
 							(*test_iter + "_" + to_string(ti) + "_" + *tmpl_iter + ".jpg");;
-
 						cv::imwrite(align_im_file.string(), M_im);
-
 					}
 
-
-
-					// ±£´æ²Ã¼ô½á¹û
-
+					// ä¿å­˜è£å‰ªç»“æœ
 					if (save_crop)
-
 					{
-
 						int start_r = ref_valid.ymin;
-
 						int start_c = ref_valid.xmin;
-
 						int end_r = ref_valid.ymax;
-
 						int end_c = ref_valid.xmax;
 
-
-
 						Mat test_crop_im = M_im(Range(start_r, end_r), Range(start_c, end_c));
-
 						fs::path test_crop_file = res_crop_path /
-
 							(*test_iter + "_" + to_string(ti) + "_" + *tmpl_iter + ".jpg");
-
 						cv::imwrite(test_crop_file.string(), test_crop_im);
-
 					}
-
 				
-
-					// ±£´æ×ø±ê
-
+					// ä¿å­˜åæ ‡
 					fs::path trans_tmpl_valid_file = res_box_path /
-
 						(*test_iter + "_" + to_string(ti) + "_" + *tmpl_iter + ".txt");
-
 					ofstream trans_tmpl_valid_txt(trans_tmpl_valid_file.string(), ios::out);
-
 					trans_tmpl_valid_txt
-
 						<< this_trans_valid.xmin << " "
-
 						<< this_trans_valid.xmax << " "
-
 						<< this_trans_valid.ymin << " "
-
 						<< this_trans_valid.ymax << std::endl;
-
 					trans_tmpl_valid_txt.close();
-
 				}
 
-
-
-
-
-				// ±£´æ°ÑÄ£°åÍ¼Ïñ±ä»»µ½²âÊÔÍ¼Ïñ²úÉúµÄºòÑ¡°üÎ§ºĞ
-
-				// -- ÔÚ²âÊÔÍ¼ÏñÉÏ»­³öÀ´
-
+				// ä¿å­˜æŠŠæ¨¡æ¿å›¾åƒå˜æ¢åˆ°æµ‹è¯•å›¾åƒäº§ç”Ÿçš„å€™é€‰åŒ…å›´ç›’
+				// -- åœ¨æµ‹è¯•å›¾åƒä¸Šç”»å‡ºæ¥
 				rectangle(trans_tmpl_valid_im,
-
 					this_trans_valid.tl(), this_trans_valid.br(),
-
 					Scalar(0, 0, 255));
-
 			}
-
 		}
 
-		
-
-		//  ±£´æ±ä»»ºóµÄÄ£°åÓĞĞ§ÇøÓò»­ÔÚ²âÊÔÍ¼ÏñÉÏµÄ½á¹û
-
+		//  ä¿å­˜å˜æ¢åçš„æ¨¡æ¿æœ‰æ•ˆåŒºåŸŸç”»åœ¨æµ‹è¯•å›¾åƒä¸Šçš„ç»“æœ
 		fs::path trans_tmpl_valid_im_file = res_box_path /
 
 			(*test_iter + ".jpg");
-
 		cv::imwrite(trans_tmpl_valid_im_file.string(), trans_tmpl_valid_im);
-
 	}
-
-
 
 	res_log.close();
 
-
-
 	return 0;
-
 }
 

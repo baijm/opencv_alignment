@@ -1,112 +1,56 @@
 #ifndef _MY_DETECTOR_H
-
 #define _MY_DETECTOR_H
 
-
-
 #include <opencv2/imgproc.hpp>
-
 #include <string>
-
 #include <vector>
-
 #include <algorithm>
-
 #include <iostream>
-
-
 
 #include "util.h"
 
-
-
-// Çó½â·ÂÉä¾ØÕóµÄ»ùÀà
-
+// æ±‚è§£ä»¿å°„çŸ©é˜µçš„åŸºç±»
 class MyAffineEstimator 
-
 {
-
 public:
-
-	// ·µ»ØµÄinlier
-
+	// è¿”å›çš„inlier
 	std::vector<cv::DMatch> inliers;
 
-
-
-	// Í¼ÏñÖĞĞÄ×ø±ê
-
+	// å›¾åƒä¸­å¿ƒåæ ‡
 	cv::Point2f test_center, ref_center;
 
-
-
-	// Çó½â·ÂÉä¾ØÕó, ·µ»ØÊÇ·ñ³É¹¦
-
+	// æ±‚è§£ä»¿å°„çŸ©é˜µ, è¿”å›æ˜¯å¦æˆåŠŸ
 	virtual bool estimate_affine_matrix(
-
 		std::vector<cv::KeyPoint> &test_kps, 
-
 		std::vector<cv::KeyPoint> &ref_kps, 
-
 		std::vector<cv::DMatch> &matches,
-
 		cv::Mat &A_mat) = 0;
-
-
 
 	virtual bool estimate_affine_matrix(
-
 		std::vector<cv::Point2f> &test_pts,
-
 		std::vector<cv::Point2f> &ref_pts,
-
 		cv::Mat &A_mat) = 0;
-
 };
 
-
-
-// ÓÃRANSACÇó·ÂÉä¾ØÕó
-
+// ç”¨RANSACæ±‚ä»¿å°„çŸ©é˜µ
 class RansacAffineEstimator : public MyAffineEstimator
-
 {
-
 private:
-
 	double reproj_thres;
 
-
-
 public:
-
 	RansacAffineEstimator(double r_th = 3.0) : reproj_thres(r_th) {};
 
-
-
 	bool estimate_affine_matrix(
-
 		std::vector<cv::KeyPoint> &test_kps, 
-
 		std::vector<cv::KeyPoint> &ref_kps, 
-
 		std::vector<cv::DMatch> &matches,
-
 		cv::Mat &A_mat);
-
-
 
 	bool estimate_affine_matrix(
-
 		std::vector<cv::Point2f> &test_pts,
-
 		std::vector<cv::Point2f> &ref_pts,
-
 		cv::Mat &A_mat);
-
 };
 
-
-
 #endif // !_MY_DETECTOR_H
-

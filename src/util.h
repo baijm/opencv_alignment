@@ -1,326 +1,159 @@
 #ifndef _UTIL_H
-
 #define _UTIL_H
 
-
-
 #include <opencv2/highgui/highgui.hpp>
-
 #include <opencv2/calib3d/calib3d.hpp>
-
 #include <opencv2/imgproc/imgproc.hpp>
-
 #include <opencv2/features2d/features2d.hpp>
 
-
-
 #include <boost/algorithm/string/split.hpp>
-
 #include <boost/algorithm/string/classification.hpp>
 
-
-
 #include <iostream>
-
 #include <fstream> 
-
 #include <string>
-
 #include <limits>
-
 #include <time.h>
 
-
-
 using namespace cv;
-
 using namespace std;
 
-
-
-
-
-// ±£´æÇøÓò×ø±ê
-
+// ä¿å­˜åŒºåŸŸåæ ‡
 struct RegionCoords {
-
 	int xmin, xmax, ymin, ymax;
-
-
 
 	RegionCoords():xmin(-1), xmax(-1), ymin(-1), ymax(-1){}
 
-
-
 	RegionCoords(int xmin_in, int xmax_in, int ymin_in, int ymax_in)
-
 		:xmin(xmin_in), xmax(xmax_in), ymin(ymin_in), ymax(ymax_in) {}
 
-
-
-	// ·µ»Ø×óÉÏ½Ç×ø±ê
-
+	// è¿”å›å·¦ä¸Šè§’åæ ‡
 	Point2f tl() const {
-
 		return Point2f(xmin, ymin);
-
 	}
 
-
-
-	// ·µ»ØÓÒÉÏ½Ç×ø±ê
-
+	// è¿”å›å³ä¸Šè§’åæ ‡
 	Point2f tr() const {
-
 		return Point2f(xmax, ymin);
-
 	}
 
-
-
-	// ·µ»Ø×óÏÂ½Ç×ø±ê
-
+	// è¿”å›å·¦ä¸‹è§’åæ ‡
 	Point2f bl() const {
-
 		return Point2f(xmin, ymax);
-
 	}
 
-
-
-	// ·µ»ØÓÒÏÂ½Ç×ø±ê
-
+	// è¿”å›å³ä¸‹è§’åæ ‡
 	Point2f br() const {
-
 		return Point2f(xmax, ymax);
-
 	}
 
-
-
-	// ·µ»Ø¿í
-
+	// è¿”å›å®½
 	int width() const {
-
 		return xmax - xmin;
-
 	}
 
-
-
-	// ·µ»Ø¸ß
-
+	// è¿”å›é«˜
 	int height() const {
-
 		return ymax - ymin;
-
 	}
 
-
-
-	// ·µ»Ø¸ßÓÚ¿íµÄ±ÈÖµ
-
+	// è¿”å›é«˜äºå®½çš„æ¯”å€¼
 	float h2w() const {
-
 		return 1.0 * height() / width();
-
 	}
 
-
-
-	// ·µ»ØÃæ»ı
-
+	// è¿”å›é¢ç§¯
 	int area() const {
-
 		return width() * height();
-
 	}
 
-
-
-	// ¼ÆËãÖØµş
-
+	// è®¡ç®—é‡å 
 	float overlap(const RegionCoords &r) const {
-
 		int r_xmin = r.xmin, r_ymin = r.ymin, r_width = r.width(), r_height = r.height();
 
-
-
 		int start_x = min(xmin, r_xmin), start_y = min(ymin, r_ymin);
-
 		int end_x = max(xmax, r_xmin + r_width), end_y = max(ymax, r_ymin + r_height);
 
-
-
 		int overlap_width = r_width + width() - (end_x - start_x);
-
 		int overlap_height = r_height + height() - (end_y - start_y);
 
-
-
 		if (overlap_width <= 0 || overlap_height <= 0)
-
 		{
-
 			return 0;
-
 		}
-
 		else
-
 		{
-
 			float overlap_area = overlap_width * overlap_height;
-
 			return overlap_area / (area() + r.area() - overlap_area);
-
 		}
-
 	}
-
 };
 
-
-
-
-
-// ±£´æmatlabÊä³öµÄwordÎÄ¼şÖĞÃ¿Ò»ĞĞµÄÄÚÈİ
-
+// ä¿å­˜matlabè¾“å‡ºçš„wordæ–‡ä»¶ä¸­æ¯ä¸€è¡Œçš„å†…å®¹
 struct MatchKpsSim
-
 {
-
 	int test_pid;
-
 	int tmpl_pid;
-
 	double sim;
 
-
-
 	MatchKpsSim(int test_p, int tmpl_p, double s = 0)
-
 	{
-
 		test_pid = test_p;
-
 		tmpl_pid = tmpl_p;
-
 		sim = s;
-
 	}
-
 };
 
-
-
-
-
-// ±£´æÌØÕ÷µãĞÅÏ¢µ½txtÎÄ¼ş, Ã¿Ò»ĞĞÒÀ´ÎÊÇy x size angle
-
+// ä¿å­˜ç‰¹å¾ç‚¹ä¿¡æ¯åˆ°txtæ–‡ä»¶, æ¯ä¸€è¡Œä¾æ¬¡æ˜¯y x size angle
 void save_kp_txt(string txt_path, const vector<KeyPoint>& kp);
 
-// ¶ÁÈ¡_kp.txtÎÄ¼ş, ±£ÁôÌØÕ÷µãËùÓĞĞÅÏ¢
-
+// è¯»å–_kp.txtæ–‡ä»¶, ä¿ç•™ç‰¹å¾ç‚¹æ‰€æœ‰ä¿¡æ¯
 vector<KeyPoint> load_kp_txt(string txt_path);
 
-// ¶ÁÈ¡_kp.txtÎÄ¼ş, Ö»±£ÁôÌØÕ÷µãÎ»ÖÃ
-
+// è¯»å–_kp.txtæ–‡ä»¶, åªä¿ç•™ç‰¹å¾ç‚¹ä½ç½®
 vector<Point2f> load_kp_pos_txt(string txt_path);
 
-
-
-
-
-// ±£´æÃèÊö×Óµ½txtÎÄ¼ş, Ã¿Ò»ĞĞÊÇÒ»¸öÌØÕ÷ÏòÁ¿
-
+// ä¿å­˜æè¿°å­åˆ°txtæ–‡ä»¶, æ¯ä¸€è¡Œæ˜¯ä¸€ä¸ªç‰¹å¾å‘é‡
 void save_des_txt(string des_path, const Mat& des);
 
-// ¶ÁÈ¡_des.txtÎÄ¼ş
-
+// è¯»å–_des.txtæ–‡ä»¶
 Mat load_des_txt(string txt_path);
 
-
-
-
-
-// ¶ÁÈ¡ÇøÓò×ø±êÎÄ¼ş, Ã¿Ò»ĞĞÒÀ´ÎÊÇxmin xmax ymin ymax
-
+// è¯»å–åŒºåŸŸåæ ‡æ–‡ä»¶, æ¯ä¸€è¡Œä¾æ¬¡æ˜¯xmin xmax ymin ymax
 RegionCoords load_region_txt(string txt_path);
 
-
-
-
-
-// ¶ÁÈ¡matlabÊä³öµÄwordÎÄ¼ş, ÆäÖĞÃ¿Ò»ĞĞÎªÒ»¸öÆ¥ÅäµÄ²âÊÔÍ¼ÏñÌØÕ÷µãË÷Òı, Ä£°åÍ¼ÏñÌØÕ÷µãË÷Òı, ÏàËÆ¶È
-
-// [ÒòÎªmatlabË÷Òı´Ó1¿ªÊ¼, ´Ë´¦ËùÓĞË÷Òı-1]
-
+// è¯»å–matlabè¾“å‡ºçš„wordæ–‡ä»¶, å…¶ä¸­æ¯ä¸€è¡Œä¸ºä¸€ä¸ªåŒ¹é…çš„æµ‹è¯•å›¾åƒç‰¹å¾ç‚¹ç´¢å¼•, æ¨¡æ¿å›¾åƒç‰¹å¾ç‚¹ç´¢å¼•, ç›¸ä¼¼åº¦
+// [å› ä¸ºmatlabç´¢å¼•ä»1å¼€å§‹, æ­¤å¤„æ‰€æœ‰ç´¢å¼•-1]
 void load_match_txt(string txt_path, vector<DMatch>& matches);
 
-// ¶ÁÈ¡recurrent patternÆ¥Åäµã¶Ô
-
-// Ã¿Ò»ĞĞÒÀ´ÎÊÇ: test_p_x test_p_y tmpl_p_x tmpl_p_y
-
+// è¯»å–recurrent patternåŒ¹é…ç‚¹å¯¹
+// æ¯ä¸€è¡Œä¾æ¬¡æ˜¯: test_p_x test_p_y tmpl_p_x tmpl_p_y
 void load_match_pts_txt(string txt_path, vector<Point2f>& test_pts, vector<Point2f>& ref_pts);
 
-
-
-
-
-// ±£´æbriskÌØÕ÷
-
+// ä¿å­˜briskç‰¹å¾
 void save_brisk(string img_dir, string img_name, string save_dir);
 
-// ±£´æSIFTÌØÕ÷
-
+// ä¿å­˜SIFTç‰¹å¾
 //void compute_and_save_sift(string img_name, Mat& im_g, vector<KeyPoint>& kps, string save_dir);
 
-
-
-
-
-// ÓÅ»¯Ïà¹Ø
-
-// ÓÅ»¯Ê±´«¸øÄ¿±êº¯ÊıµÄÊı¾İ
-
+// ä¼˜åŒ–ç›¸å…³
+// ä¼˜åŒ–æ—¶ä¼ ç»™ç›®æ ‡å‡½æ•°çš„æ•°æ®
 struct ObjectiveFunctionData
-
 {
-
 	vector<DMatch> *matches;
-
 	vector<Point2f> *test_pts;
-
 	vector<Point2f> *tmpl_pts;
 
-
-
 	ObjectiveFunctionData(vector<DMatch> &matches_in, vector<Point2f> &test_pts_in, vector<Point2f> &tmpl_pts_in)
-
 	{
-
 		matches = &matches_in;
-
 		test_pts = &test_pts_in;
-
 		tmpl_pts = &tmpl_pts_in;
-
 	}
-
 };
 
-
-
-// Ä¿±êº¯Êı
-
+// ç›®æ ‡å‡½æ•°
 // a = {a11, a12, a13, a21, a22, a23}
-
 double obj_func(const vector<double> &a, vector<double> &grad, void *func_data);
 
-
-
-
-
 #endif // !_UTIL_H
-
