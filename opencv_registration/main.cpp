@@ -219,9 +219,6 @@ int main()
 
 		// 变换后的模板图像有效区域
 		vector<RegionCoords> trans_valid_regions;
-		// - 保存到文件
-		fs::path trans_tmpl_valid_file = res_box_path / (*test_iter + ".txt");
-		ofstream trans_tmpl_valid_txt(trans_tmpl_valid_file.string(), ios::out);
 		// - 画在图像上
 		Mat trans_tmpl_valid_im = test_im_c.clone();
 
@@ -441,6 +438,17 @@ int main()
 							cv::imwrite(test_crop_file.string(), test_crop_im);
 						}
 
+						// 保存坐标
+						fs::path trans_tmpl_valid_file = res_box_path /
+							(*test_iter + "_" + to_string(ti) + "_" + *tmpl_iter + ".txt");
+						ofstream trans_tmpl_valid_txt(trans_tmpl_valid_file.string(), ios::out);
+						trans_tmpl_valid_txt
+							<< this_trans_valid.xmin << " "
+							<< this_trans_valid.xmax << " "
+							<< this_trans_valid.ymin << " "
+							<< this_trans_valid.ymax << std::endl;
+						trans_tmpl_valid_txt.close();
+
 						break;
 					}
 				}
@@ -471,6 +479,17 @@ int main()
 							(*test_iter + "_" + to_string(ti) + "_" + *tmpl_iter + ".jpg");
 						cv::imwrite(test_crop_file.string(), test_crop_im);
 					}
+				
+					// 保存坐标
+					fs::path trans_tmpl_valid_file = res_box_path /
+						(*test_iter + "_" + to_string(ti) + "_" + *tmpl_iter + ".txt");
+					ofstream trans_tmpl_valid_txt(trans_tmpl_valid_file.string(), ios::out);
+					trans_tmpl_valid_txt
+						<< this_trans_valid.xmin << " "
+						<< this_trans_valid.xmax << " "
+						<< this_trans_valid.ymin << " "
+						<< this_trans_valid.ymax << std::endl;
+					trans_tmpl_valid_txt.close();
 				}
 
 
@@ -479,12 +498,6 @@ int main()
 				rectangle(trans_tmpl_valid_im,
 					this_trans_valid.tl(), this_trans_valid.br(),
 					Scalar(0, 0, 255));
-				// -- 在txt文件中保存坐标
-				trans_tmpl_valid_txt
-					<< this_trans_valid.xmin << " "
-					<< this_trans_valid.xmax << " "
-					<< this_trans_valid.ymin << " "
-					<< this_trans_valid.ymax << std::endl;
 			}
 		}
 		
@@ -492,7 +505,6 @@ int main()
 		fs::path trans_tmpl_valid_im_file = res_box_path /
 			(*test_iter + ".jpg");
 		cv::imwrite(trans_tmpl_valid_im_file.string(), trans_tmpl_valid_im);
-		trans_tmpl_valid_txt.close();
 	}
 
 	res_log.close();
