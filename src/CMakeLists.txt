@@ -1,4 +1,4 @@
-set(OpenCV_DIR "/home/bjm/environments/opencv-3.2.0/build")
+set(OpenCV_DIR /home/bjm/environments/opencv-3.2.0/build)
 find_package(OpenCV REQUIRED COMPONENTS
 core
 flann
@@ -15,7 +15,6 @@ else()
   message(FATAL_ERROR "Opencv not found")
 endif()
 
-#set(Boost_ADDITIONAL_VERSIONS 1.60.0)
 set(BOOST_ROOT /home/bjm/environments/boost_1_60_0/install)
 find_package(Boost REQUIRED COMPONENTS
 filesystem
@@ -37,13 +36,11 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 # 指定编译64位程序
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -m64")
 
-# Declare the executable target built from your sources
+# 要生成的目标文件
 add_executable(opencv_alignment main.cpp my_detector.cpp util.cpp)
-#add_executable(test_boost test_boost.cpp)
 # 指定生成文件的输出路径
 SET(EXECUTABLE_OUTPUT_PATH ${PROJECT_BINARY_DIR}/bin)
 
 # Link your application with OpenCV libraries
 target_link_libraries(opencv_alignment ${OpenCV_LIBS} ${Boost_LIBRARIES})
-#target_link_libraries(test_boost ${Boost_LIBRARIES})
 
