@@ -423,11 +423,13 @@ int main()
 				this_trans_valid.ymax = min(this_trans_valid.ymax, test_im_size.height - 1);
 
 				// -- 如果变换到测试图像的有效区域宽高比和原本的有效区域相反, 则跳过
+				/*
 				if ((this_trans_valid.h2w() < 1 && ref_valid.h2w() > 1)
 					|| (this_trans_valid.h2w() > 1 && ref_valid.h2w() < 1))
 				{
 					continue;
 				}
+				*/
 
 				// -- 根据与当前测试图像已有的变换后模板图像有效区域的重叠编号
 				int ti;

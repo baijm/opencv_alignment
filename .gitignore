@@ -6,6 +6,7 @@
 # input and output file
 *.yml~
 *.txt~
+*.txt
 
 bin/
 result/
