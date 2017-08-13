@@ -2,7 +2,7 @@
 ---
 # 保存选项
 # -- 保存在彩色图像上画出读入的全部匹配和RANSAC后inliers的结果
-save_match: 1
+save_match: 0
 # -- 保存对齐后未裁剪的结果
 save_align: 1
 # -- 保存对齐且裁剪后的结果
