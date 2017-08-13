@@ -1,29 +1,22 @@
-set(OpenCV_DIR /home/bjm/environments/opencv-3.2.0/build)
-find_package(OpenCV REQUIRED COMPONENTS
-core
-flann
-highgui
-calib3d
-imgproc
-features2d
-imgcodecs
-)
+cmake_minimum_required(VERSION 2.8)
+
+project(opencv_alignment CXX)
+
+# set(OpenCV_DIR /home/bjm/environments/opencv-3.2.0/build)
+find_package(OpenCV REQUIRED)
 if(OpenCV_FOUND)
   message(STATUS "$OpenCV_VERSION = ${OpenCV_VERSION}")
   message(STATUS "$OpenCV_LIBS = ${OpenCV_LIBS}")
 else()
-  message(FATAL_ERROR "Opencv not found")
+  message(FATAL_ERROR "OpenCV not found")
 endif()
 
-set(BOOST_ROOT /home/bjm/environments/boost_1_60_0/install)
-find_package(Boost REQUIRED COMPONENTS
-filesystem
-system
-date_time)
+# set(BOOST_ROOT /home/bjm/environments/boost_1_60_0/install)
+find_package(Boost REQUIRED)
 if(Boost_FOUND)
   message(STATUS "$Boost_INCLUDE_DIR = ${Boost_INCLUDE_DIR}")
   message(STATUS "$Boost_LIBRARY_DIR = ${Boost_LIBRARY_DIR}")
-  message(STATUS "$Boost_LIBRARIES = ${Boost_LIBRARIES}")
+  # message(STATUS "$Boost_LIBRARIES = ${Boost_LIBRARYS}")
 else()
   message(FATAL_ERROR "Boost not found")
 endif()

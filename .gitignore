@@ -1,4 +1,4 @@
-# ======== for linux version ==============
+# ======== for windows version ==============
 *.cpp~
 *.h~
 .gitignore~
@@ -8,6 +8,7 @@
 *.txt~
 *.txt
 
+build/
 bin/
 result/
 

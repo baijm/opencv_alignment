@@ -22,7 +22,7 @@ int main()
 	/*****************************************************************
 	* 读配置文件
 	******************************************************************/
-	string config_file = "config.yml";
+	string config_file = "D:\\projects\\vobile_shelf_20170510\\opencv_alignment\\config.yml";
 	FileStorage conf_fs(config_file, FileStorage::READ);
 	if (!conf_fs.isOpened())
 	{
