@@ -4,31 +4,35 @@
 # -- 保存在彩色图像上画出读入的全部匹配和RANSAC后inliers的结果
 save_match: 0
 # -- 保存对齐后未裁剪的结果
-save_align: 1
+save_align: 0
 # -- 保存对齐且裁剪后的结果
-save_crop: 1
+save_crop: 0
 # -- 保存把模板图像有效区域变换到测试图像产生的候选包围盒坐标,该测试图像中所有候选包围盒画在图像上的结果(用于与后续步骤对接,请勿修改)
 # save_box: 1
 # 结果目录
 # -- 保存在彩色图像上画出读入的全部匹配和RANSAC后inliers的结果
-res_match_dir: "D:\\projects\\vobile_shelf_20170510\\opencv_alignment\\result\\match"
+res_match_dir: ""
 # -- 保存对齐后未裁剪的结果
-res_align_dir: "D:\\projects\\vobile_shelf_20170510\\opencv_alignment\\result\\align"
+res_align_dir: ""
 # -- 保存对齐且裁剪后的结果
-res_crop_dir: "D:\\projects\\vobile_shelf_20170510\\opencv_alignment\\result\\crop"
+res_crop_dir: ""
 # -- 保存把模板图像有效区域变换到测试图像产生的候选包围盒坐标,该测试图像中所有候选包围盒画在图像上的结果
-res_box_dir: "D:\\projects\\vobile_shelf_20170510\\opencv_alignment\\result\\box"
+res_box_dir: "D:\\datasets\\vobile_project\\shelf\\phase2\\val\\qingyang\\vobile_split\\valid_box_700750"
 # 测试图像相关
 # -- 测试图像目录,其中测试图像扩展名为.jpg
-test_im_dir: "D:\\datasets\\vobile_project\\shelf\\phase2\\train\\qingyang\\manual_split"
+test_im_dir: "D:\\datasets\\vobile_project\\shelf\\phase2\\val\\qingyang\\vobile_split\\img"
 # -- 测试图像名列表文件,其中每一行是一幅测试图像名,无扩展名
-test_name_file: "D:\\datasets\\vobile_project\\shelf\\phase2\\train\\qingyang\\manual_split\\0813_train.txt"
+test_name_file: "D:\\datasets\\vobile_project\\shelf\\phase2\\val\\qingyang\\vobile_split\\img_names.txt"
 # -- 测试图像recurrent pattern特征匹配结果目录
-test_rp_match_dir: "D:\\datasets\\vobile_project\\shelf\\phase2\\train\\qingyang\\match_list"
+test_rp_match_dir: "D:\\datasets\\vobile_project\\shelf\\phase2\\val\\qingyang\\vobile_split\\match_list"
 # 模板图像相关
 # -- 模板图像目录,其中模板图像扩展名为.jpg
 tmpl_im_dir: "D:\\datasets\\vobile_project\\shelf\\phase2\\template\\qingyang\\h1200\\img"
 # -- 模板图像名列表文件,其中每一行是一幅模板图像名,无扩展名
-tmpl_name_file: "D:\\datasets\\vobile_project\\shelf\\phase2\\template\\qingyang\\img_names.txt"
+tmpl_name_file: "D:\\datasets\\vobile_project\\shelf\\phase2\\template\\qingyang\\img_names_large.txt"
 # -- 模板图像有效区域坐标目录,其中每个模板图像一个txt文件,文件中只有一行,依次为xmin,xmax,ymin,ymax,用空格分隔
-tmpl_valid_dir: "D:\\datasets\\vobile_project\\shelf\\phase2\\template\\qingyang\\h1200\\top\\coords"
+tmpl_valid_dir: "D:\\datasets\\vobile_project\\shelf\\phase2\\template\\qingyang\\h1200\\valid\\coords"
+# -- 模板图像logo区域坐标目录,其中每个模板图像一个txt文件,文件中只有一行,依次为xmin,xmax,ymin,ymax,用空格分隔
+tmpl_logo_dir: "D:\\datasets\\vobile_project\\shelf\\phase2\\template\\qingyang\\h1200\\logo\\coords"
+# -- 变换后的logo区域重叠大于阈值时, 认为对应同一个商品
+logo_overlap_thres: 0.5
