@@ -6,7 +6,7 @@ save_match: 0
 # -- 保存对齐后未裁剪的结果
 save_align: 0
 # -- 保存对齐且裁剪后的结果
-save_crop: 0
+save_crop: 1
 # -- 保存把模板图像有效区域变换到测试图像产生的候选包围盒坐标,该测试图像中所有候选包围盒画在图像上的结果(用于与后续步骤对接,请勿修改)
 # save_box: 1
 # 结果目录
@@ -15,9 +15,9 @@ res_match_dir: ""
 # -- 保存对齐后未裁剪的结果
 res_align_dir: ""
 # -- 保存对齐且裁剪后的结果
-res_crop_dir: ""
+res_crop_dir: "D:\\datasets\\vobile_project\\shelf\\phase2\\val\\qingyang\\vobile_split\\full_all_mean\\crop"
 # -- 保存把模板图像有效区域变换到测试图像产生的候选包围盒坐标,该测试图像中所有候选包围盒画在图像上的结果
-res_box_dir: "D:\\datasets\\vobile_project\\shelf\\phase2\\val\\qingyang\\vobile_split\\valid_box_700750"
+res_box_dir: "D:\\datasets\\vobile_project\\shelf\\phase2\\val\\qingyang\\vobile_split\\full_all_mean\\box"
 # 测试图像相关
 # -- 测试图像目录,其中测试图像扩展名为.jpg
 test_im_dir: "D:\\datasets\\vobile_project\\shelf\\phase2\\val\\qingyang\\vobile_split\\img"
@@ -29,10 +29,15 @@ test_rp_match_dir: "D:\\datasets\\vobile_project\\shelf\\phase2\\val\\qingyang\\
 # -- 模板图像目录,其中模板图像扩展名为.jpg
 tmpl_im_dir: "D:\\datasets\\vobile_project\\shelf\\phase2\\template\\qingyang\\h1200\\img"
 # -- 模板图像名列表文件,其中每一行是一幅模板图像名,无扩展名
-tmpl_name_file: "D:\\datasets\\vobile_project\\shelf\\phase2\\template\\qingyang\\img_names_large.txt"
+tmpl_name_file: "D:\\datasets\\vobile_project\\shelf\\phase2\\template\\qingyang\\img_names.txt"
 # -- 模板图像有效区域坐标目录,其中每个模板图像一个txt文件,文件中只有一行,依次为xmin,xmax,ymin,ymax,用空格分隔
-tmpl_valid_dir: "D:\\datasets\\vobile_project\\shelf\\phase2\\template\\qingyang\\h1200\\valid\\coords"
+tmpl_valid_dir: "D:\\datasets\\vobile_project\\shelf\\phase2\\template\\qingyang\\h1200\\full\\coords"
 # -- 模板图像logo区域坐标目录,其中每个模板图像一个txt文件,文件中只有一行,依次为xmin,xmax,ymin,ymax,用空格分隔
 tmpl_logo_dir: "D:\\datasets\\vobile_project\\shelf\\phase2\\template\\qingyang\\h1200\\logo\\coords"
+# 编号与筛选选项
 # -- 变换后的logo区域重叠大于阈值时, 认为对应同一个商品
 logo_overlap_thres: 0.5
+# -- 如果变换后有效区域的宽高比与1的关系和之前不一样则忽略
+filter_h2w: 1
+# -- 一个商品与所有模板对齐产生的包围盒综合成一个所用方法(mean - 取平均, median - 取中值, none - 不综合)
+summarize_box: "mean"
