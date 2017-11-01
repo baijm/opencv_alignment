@@ -19,7 +19,7 @@ using namespace cv;
 
 int main(int argc, char* argv[])
 {
-	if(argc < 2)
+	if(argc != 2)
 	{
 		cout << "Usage : opencv_alignment <yml_file>" << endl;
 		return -1;
@@ -465,6 +465,10 @@ int main(int argc, char* argv[])
 						estimator->inliers, match_inlier_im);
 					fs::path match_inlier_im_file = res_match_path
 						/ (*test_iter + "_" + *tmpl_iter + "_" + to_string(*valid_iter) + "_inliers.jpg");
+					if (!fs::exists(match_inlier_im_file.parent_path()))
+					{
+						fs::create_directories(match_inlier_im_file.parent_path());
+					}
 					cv::imwrite(match_inlier_im_file.string(), match_inlier_im);
 				}
 
@@ -578,6 +582,10 @@ int main(int argc, char* argv[])
 							{
 								fs::path align_im_file = res_align_path /
 									(*test_iter + "_" + to_string(ti) + "_" + *tmpl_iter + ".jpg");
+								if (!fs::exists(align_im_file.parent_path()))
+								{
+									fs::create_directories(align_im_file.parent_path());
+								}
 								cv::imwrite(align_im_file.string(), M_im);
 							}
 
@@ -598,6 +606,10 @@ int main(int argc, char* argv[])
 									Mat test_crop_im = M_im(Range(start_r, end_r + 1), Range(start_c, end_c + 1));
 									fs::path test_crop_file = res_valid_crop_path /
 										(*test_iter + "_" + to_string(ti) + "_" + *tmpl_iter + ".jpg");
+									if (!fs::exists(test_crop_file.parent_path()))
+									{
+										fs::create_directories(test_crop_file.parent_path());
+									}
 									cv::imwrite(test_crop_file.string(), test_crop_im);
 								}
 
@@ -611,6 +623,10 @@ int main(int argc, char* argv[])
 									Mat test_crop_im = M_im(Range(start_r, end_r + 1), Range(start_c, end_c + 1));
 									fs::path test_crop_file = res_logo_crop_path /
 										(*test_iter + "_" + to_string(ti) + "_" + *tmpl_iter + ".jpg");
+									if (!fs::exists(test_crop_file.parent_path()))
+									{
+										fs::create_directories(test_crop_file.parent_path());
+									}
 									cv::imwrite(test_crop_file.string(), test_crop_im);
 								}
 
@@ -620,6 +636,10 @@ int main(int argc, char* argv[])
 									// 如果不对同一个商品的包围盒综合, 则保存与一个模板图像对应的包围盒坐标, 画在图像上
 									fs::path ttv_coord_file = res_valid_box_path /
 										(*test_iter + "_" + to_string(ti) + "_" + *tmpl_iter + ".txt");
+									if (!fs::exists(ttv_coord_file.parent_path()))
+									{
+										fs::create_directories(ttv_coord_file.parent_path());
+									}
 									ofstream ttv_coord_txt(ttv_coord_file.string(), ios::out);
 									ttv_coord_txt << this_ttv;
 									ttv_coord_txt.close();
@@ -635,6 +655,10 @@ int main(int argc, char* argv[])
 									// 如果不对同一个商品的包围盒综合, 则保存与一个模板图像对应的包围盒坐标, 画在图像上
 									fs::path ttv_coord_file = res_logo_box_path /
 										(*test_iter + "_" + to_string(ti) + "_" + *tmpl_iter + ".txt");
+									if (!fs::exists(ttv_coord_file.parent_path()))
+									{
+										fs::create_directories(ttv_coord_file.parent_path());
+									}
 									ofstream ttv_coord_txt(ttv_coord_file.string(), ios::out);
 									ttv_coord_txt << this_ttl;
 									ttv_coord_txt.close();
@@ -666,6 +690,10 @@ int main(int argc, char* argv[])
 					{
 						fs::path align_im_file = res_align_path /
 							(*test_iter + "_" + to_string(ti) + "_" + *tmpl_iter + ".jpg");
+						if (!fs::exists(align_im_file.parent_path()))
+						{
+							fs::create_directories(align_im_file.parent_path());
+						}
 						cv::imwrite(align_im_file.string(), M_im);
 					}
 
@@ -683,6 +711,10 @@ int main(int argc, char* argv[])
 							Mat test_crop_im = M_im(Range(start_r, end_r + 1), Range(start_c, end_c + 1));
 							fs::path test_crop_file = res_valid_crop_path /
 								(*test_iter + "_" + to_string(ti) + "_" + *tmpl_iter + ".jpg");
+							if (!fs::exists(test_crop_file.parent_path()))
+							{
+								fs::create_directories(test_crop_file.parent_path());
+							}
 							cv::imwrite(test_crop_file.string(), test_crop_im);
 						}
 
@@ -696,6 +728,10 @@ int main(int argc, char* argv[])
 							Mat test_crop_im = M_im(Range(start_r, end_r + 1), Range(start_c, end_c + 1));
 							fs::path test_crop_file = res_logo_crop_path /
 								(*test_iter + "_" + to_string(ti) + "_" + *tmpl_iter + ".jpg");
+							if (!fs::exists(test_crop_file.parent_path()))
+							{
+								fs::create_directories(test_crop_file.parent_path());
+							}
 							cv::imwrite(test_crop_file.string(), test_crop_im);
 						}
 
@@ -705,6 +741,10 @@ int main(int argc, char* argv[])
 							// 如果不对同一个商品的包围盒综合, 则保存与一个模板图像对应的包围盒坐标, 画在图像上
 							fs::path ttv_coord_file = res_valid_box_path /
 								(*test_iter + "_" + to_string(ti) + "_" + *tmpl_iter + ".txt");
+							if (!fs::exists(ttv_coord_file.parent_path()))
+							{
+								fs::create_directories(ttv_coord_file.parent_path());
+							}
 							ofstream ttv_coord_txt(ttv_coord_file.string(), ios::out);
 							ttv_coord_txt << this_ttv;
 							ttv_coord_txt.close();
@@ -726,6 +766,10 @@ int main(int argc, char* argv[])
 							// 如果不对同一个商品的包围盒综合, 则保存与一个模板图像对应的包围盒坐标, 画在图像上
 							fs::path ttv_coord_file = res_logo_box_path /
 								(*test_iter + "_" + to_string(ti) + "_" + *tmpl_iter + ".txt");
+							if (!fs::exists(ttv_coord_file.parent_path()))
+							{
+								fs::create_directories(ttv_coord_file.parent_path());
+							}
 							ofstream ttv_coord_txt(ttv_coord_file.string(), ios::out);
 							ttv_coord_txt << this_ttl;
 							ttv_coord_txt.close();
